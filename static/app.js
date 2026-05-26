@@ -50,20 +50,22 @@ async function loadInvoices() {
     renderStats();
     // Заполняем фильтр контрагентов
     const sel = document.getElementById('filter-cp');
-    const cur = sel.value;
-    const cps = [...new Set(allInvoices.map(i => i.counterparty_name))].sort();
-    sel.innerHTML = '<option value="">Все контрагенты</option>' +
-      cps.map(n => `<option value="${n}">${n}</option>`).join('');
-    if (cur) sel.value = cur;
+    if (sel) {
+      const cur = sel.value;
+      const cps = [...new Set(allInvoices.map(i => i.counterparty_name))].sort();
+      sel.innerHTML = '<option value="">Все контрагенты</option>' +
+        cps.map(n => `<option value="${n}">${n}</option>`).join('');
+      if (cur) sel.value = cur;
+    }
     renderInvoices();
   } catch (e) { toast(e.message, 'error'); }
 }
 
 function clearFilters() {
   document.getElementById('search-input').value = '';
-  document.getElementById('filter-cp').value = '';
-  document.getElementById('filter-date-from').value = '';
-  document.getElementById('filter-date-to').value = '';
+  if (document.getElementById('filter-cp')) document.getElementById('filter-cp').value = '';
+  if (document.getElementById('filter-date-from')) document.getElementById('filter-date-from').value = '';
+  if (document.getElementById('filter-date-to')) document.getElementById('filter-date-to').value = '';
   renderInvoices();
 }
 

@@ -91,9 +91,9 @@ function sortInvoices(field) {
 function renderInvoices() {
   const q = (document.getElementById('search-input').value || '').toLowerCase();
   const tbody = document.getElementById('invoices-body');
-  const cpFilter = document.getElementById('filter-cp').value;
-  const dateFrom = document.getElementById('filter-date-from').value;
-  const dateTo   = document.getElementById('filter-date-to').value;
+  const cpFilter = document.getElementById('filter-cp')?.value || '';
+  const dateFrom = document.getElementById('filter-date-from')?.value || '';
+  const dateTo   = document.getElementById('filter-date-to')?.value || '';
 
   let list = allInvoices.filter(inv => {
     const matchSearch = !q || inv.number.toLowerCase().includes(q) || inv.counterparty_name.toLowerCase().includes(q);

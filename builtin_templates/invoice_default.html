@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 11px; color: #222; padding: 32px 40px; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; }
+  .meta-table { border-collapse: collapse; }
+  .meta-table td { padding: 5px 12px; border: 0.5px solid #ccc; }
+  .meta-table td:first-child { font-weight: bold; background: #f0f0f0; }
+  .title { font-size: 26px; font-weight: bold; text-align: right; margin-bottom: 8px; }
+  .company-right { text-align: right; font-size: 10px; line-height: 1.9; color: #333; }
+  .company-right strong { font-size: 13px; color: #111; display: block; }
+  .section-label { font-size: 10px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: #888; margin: 20px 0 6px; }
+  .to-block { font-size: 11px; line-height: 1.9; }
+  .to-block strong { font-size: 12px; }
+  table.items { width: 100%; border-collapse: collapse; margin-top: 20px; }
+  table.items th { background: #efefef; font-size: 10px; font-weight: bold; padding: 7px 10px; border: 0.5px solid #bbb; text-align: left; }
+  table.items td { padding: 7px 10px; border: 0.5px solid #ddd; font-size: 11px; }
+  table.items tr:nth-child(even) td { background: #fafafa; }
+  .right { text-align: right; }
+  .total-row td { font-weight: bold; background: #efefef; font-size: 12px; }
+  .footer { margin-top: 28px; font-size: 9px; color: #999; text-align: center; border-top: 0.5px solid #ddd; padding-top: 12px; }
+  .notes { margin-top: 16px; font-size: 10px; color: #555; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <table class="meta-table">
+    <tr><td>Date:</td><td>{{ invoice_date }}</td></tr>
+    <tr><td>Invoice:</td><td>{{ invoice_number }}</td></tr>
+  </table>
+  <div>
+    <div class="title">INVOICE</div>
+    <div class="company-right">
+      <strong>{{ company_name }}</strong>
+      {{ company_address }}<br>
+      {{ company_country }}<br>
+      Company number: {{ company_number }}<br>
+      SWIFT: {{ company_swift }}<br>
+      IBAN: {{ company_iban }}<br>
+      VAT: {{ company_vat }}
+    </div>
+  </div>
+</div>
+
+<div class="section-label">Bill to</div>
+<div class="to-block">
+  <strong>{{ cp_name }}</strong><br>
+  {% if cp_address %}Address: {{ cp_address }}<br>{% endif %}
+  {% if cp_old_address %}OLD: {{ cp_old_address }}<br>{% endif %}
+  {% if cp_company_number %}ICO: {{ cp_company_number }}&nbsp;&nbsp;{% endif %}
+  {% if cp_eu_vat %}EU VAT: {{ cp_eu_vat }}{% endif %}
+</div>
+
+<table class="items">
+  <thead>
+    <tr>
+      <th style="width:32px">#</th>
+      <th>Type</th>
+      <th>Unit</th>
+      <th class="right">Price per unit, {{ currency }}</th>
+      <th class="right">Total unit</th>
+      <th class="right">Amount, {{ currency }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td style="text-align:center">{{ loop.index }}</td>
+      <td>{{ item.description }}</td>
+      <td>{{ item.unit }}</td>
+      <td class="right">{{ item.rate | int }}</td>
+      <td class="right">{{ item.time_formatted }}</td>
+      <td class="right">{{ "%.2f" | format(item.amount) }}</td>
+    </tr>
+    {% endfor %}
+    <tr class="total-row">
+      <td colspan="5" class="right">Total Summ, {{ currency }}</td>
+      <td class="right">{{ "%.2f" | format(total_amount) }}</td>
+    </tr>
+  </tbody>
+</table>
+
+{% if notes %}
+<div class="notes"><strong>Notes:</strong> {{ notes }}</div>
+{% endif %}
+
+<div class="footer">
+  Payment due {{ due_date or "within 30 days" }} &nbsp;·&nbsp; IBAN: {{ company_iban }} &nbsp;·&nbsp; SWIFT: {{ company_swift }}
+</div>
+
+</body>
+</html>

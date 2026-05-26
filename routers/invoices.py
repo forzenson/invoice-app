@@ -1,0 +1,205 @@
+import os
+from datetime import date as date_type
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
+from sqlalchemy.orm import Session
+
+from database import get_db
+from models import Invoice, InvoiceItem, InvoiceTemplate, Counterparty, InvoiceStatus, MyCompany
+from schemas import InvoiceCreate, InvoiceUpdate, InvoiceOut, InvoiceListItem
+from time_distributor import distribute_time
+
+router = APIRouter(prefix="/invoices", tags=["invoices"])
+
+PDF_DIR = Path("pdfs")
+PDF_DIR.mkdir(exist_ok=True)
+TEMPLATES_DIR = Path(os.environ.get("TEMPLATES_DIR", "templates"))
+
+
+def _build_invoice_out(inv: Invoice) -> InvoiceOut:
+    return InvoiceOut.model_validate(inv)
+
+
+@router.get("/", response_model=list[InvoiceListItem])
+def list_invoices(status: InvoiceStatus | None = None, counterparty_id: int | None = None, db: Session = Depends(get_db)):
+    q = db.query(Invoice).order_by(Invoice.date.desc())
+    if status:
+        q = q.filter(Invoice.status == status)
+    if counterparty_id:
+        q = q.filter(Invoice.counterparty_id == counterparty_id)
+    return [InvoiceListItem(
+        id=inv.id, number=inv.number, date=inv.date,
+        total_amount=inv.total_amount, currency=inv.currency,
+        status=inv.status,
+        counterparty_name=inv.counterparty.name if inv.counterparty else "—",
+    ) for inv in q.all()]
+
+
+@router.get("/{inv_id}", response_model=InvoiceOut)
+def get_invoice(inv_id: int, db: Session = Depends(get_db)):
+    inv = db.query(Invoice).get(inv_id)
+    if not inv:
+        raise HTTPException(404, "Invoice not found")
+    return _build_invoice_out(inv)
+
+
+@router.post("/", response_model=InvoiceOut, status_code=201)
+def create_invoice(data: InvoiceCreate, db: Session = Depends(get_db)):
+    if not db.query(Counterparty).get(data.counterparty_id):
+        raise HTTPException(404, "Counterparty not found")
+    if not db.query(InvoiceTemplate).get(data.template_id):
+        raise HTTPException(404, "Template not found")
+    if db.query(Invoice).filter(Invoice.number == data.number).first():
+        raise HTTPException(400, f"Invoice number '{data.number}' already exists")
+
+    distributed = distribute_time(data.total_amount, data.items)
+    inv = Invoice(
+        number=data.number, date=data.date, due_date=data.due_date,
+        currency=data.currency, total_amount=data.total_amount,
+        counterparty_id=data.counterparty_id, template_id=data.template_id,
+        my_company_id=data.my_company_id, notes=data.notes,
+        status=InvoiceStatus.draft,
+    )
+    db.add(inv)
+    db.flush()
+    for item_data in distributed:
+        db.add(InvoiceItem(invoice_id=inv.id, **item_data))
+    db.commit()
+    db.refresh(inv)
+    return _build_invoice_out(inv)
+
+
+@router.put("/{inv_id}", response_model=InvoiceOut)
+def update_invoice(inv_id: int, data: InvoiceUpdate, db: Session = Depends(get_db)):
+    inv = db.query(Invoice).get(inv_id)
+    if not inv:
+        raise HTTPException(404, "Invoice not found")
+    update_data = data.model_dump(exclude_unset=True)
+    items_data = update_data.pop("items", None)
+    for field, value in update_data.items():
+        setattr(inv, field, value)
+    if items_data is not None:
+        for old_item in inv.items:
+            db.delete(old_item)
+        db.flush()
+        for item_data in distribute_time(data.total_amount or inv.total_amount, items_data):
+            db.add(InvoiceItem(invoice_id=inv.id, **item_data))
+    db.commit()
+    db.refresh(inv)
+    return _build_invoice_out(inv)
+
+
+@router.patch("/{inv_id}/status", response_model=InvoiceOut)
+def update_status(inv_id: int, status: InvoiceStatus, db: Session = Depends(get_db)):
+    inv = db.query(Invoice).get(inv_id)
+    if not inv:
+        raise HTTPException(404, "Invoice not found")
+    inv.status = status
+    db.commit()
+    db.refresh(inv)
+    return _build_invoice_out(inv)
+
+
+@router.post("/{inv_id}/duplicate", response_model=InvoiceOut, status_code=201)
+def duplicate_invoice(inv_id: int, db: Session = Depends(get_db)):
+    src = db.query(Invoice).get(inv_id)
+    if not src:
+        raise HTTPException(404, "Invoice not found")
+    today = date_type.today()
+    new_inv = Invoice(
+        number=f"{src.number}-copy-{today.strftime('%d%m%Y')}",
+        date=today, due_date=src.due_date, currency=src.currency,
+        total_amount=src.total_amount, counterparty_id=src.counterparty_id,
+        template_id=src.template_id, my_company_id=src.my_company_id,
+        notes=src.notes, status=InvoiceStatus.draft,
+    )
+    db.add(new_inv)
+    db.flush()
+    for si in src.items:
+        db.add(InvoiceItem(invoice_id=new_inv.id, description=si.description,
+            unit=si.unit, rate=si.rate, minutes=si.minutes, amount=si.amount))
+    db.commit()
+    db.refresh(new_inv)
+    return _build_invoice_out(new_inv)
+
+
+@router.get("/{inv_id}/pdf")
+def download_pdf(inv_id: int, db: Session = Depends(get_db)):
+    inv = db.query(Invoice).get(inv_id)
+    if not inv:
+        raise HTTPException(404, "Invoice not found")
+    if not inv.pdf_path or not os.path.exists(inv.pdf_path):
+        raise HTTPException(404, "PDF not generated yet")
+    return FileResponse(inv.pdf_path, media_type="application/pdf", filename=f"{inv.number}.pdf")
+
+
+@router.post("/{inv_id}/generate-pdf", response_model=dict)
+def generate_pdf(inv_id: int, db: Session = Depends(get_db)):
+    inv = db.query(Invoice).get(inv_id)
+    if not inv:
+        raise HTTPException(404, "Invoice not found")
+
+    template_file = inv.template.filename if inv.template else "invoice_default.html"
+    template_path = TEMPLATES_DIR / template_file
+
+    if not template_path.exists():
+        # fallback to local templates dir
+        template_path = Path("templates") / template_file
+    if not template_path.exists():
+        raise HTTPException(500, f"Template '{template_file}' not found")
+
+    cp = inv.counterparty
+    mc = inv.my_company
+
+    context = {
+        "invoice_number": inv.number,
+        "invoice_date": inv.date.strftime("%B %d, %Y"),
+        "due_date": inv.due_date.strftime("%B %d, %Y") if inv.due_date else None,
+        "currency": inv.currency,
+        "total_amount": inv.total_amount,
+        "notes": inv.notes or "",
+        "company_name": mc.name if mc else "Insha s.r.o.",
+        "company_address": mc.address if mc else "Novozamocka 353, 951 12 Ivanka pri Nitre",
+        "company_country": mc.country if mc else "Slovak Republic",
+        "company_number": mc.company_number if mc else "5482834",
+        "company_swift": mc.swift if mc else "TRWIBEB1XXX",
+        "company_iban": mc.iban if mc else "BE21 9679 1901 0803",
+        "company_vat": mc.vat if mc else "SK2121797700",
+        "cp_name": cp.name if cp else "",
+        "cp_address": cp.address or "",
+        "cp_old_address": cp.old_address or "",
+        "cp_company_number": cp.company_number or "",
+        "cp_eu_vat": cp.eu_vat or "",
+        "items": [{"description": i.description, "unit": i.unit, "rate": i.rate,
+                   "time_formatted": i.time_formatted, "amount": i.amount} for i in inv.items],
+    }
+
+    pdf_path = PDF_DIR / f"{inv.number}.pdf"
+
+    from pdf_generator import generate_invoice_pdf
+
+    pdf_bytes = generate_invoice_pdf(context)
+    with open(str(pdf_path), "wb") as f:
+        f.write(pdf_bytes)
+
+    inv.pdf_path = str(pdf_path)
+    if inv.status == InvoiceStatus.draft:
+        inv.status = InvoiceStatus.sent
+    if inv.template:
+        inv.template.usage_count += 1
+    db.commit()
+
+    return {"pdf_path": str(pdf_path), "message": "PDF generated successfully"}
+
+
+@router.delete("/{inv_id}", status_code=204)
+def delete_invoice(inv_id: int, db: Session = Depends(get_db)):
+    inv = db.query(Invoice).get(inv_id)
+    if not inv:
+        raise HTTPException(404, "Invoice not found")
+    if inv.pdf_path and os.path.exists(inv.pdf_path):
+        os.remove(inv.pdf_path)
+    db.delete(inv)
+    db.commit()

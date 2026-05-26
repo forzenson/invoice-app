@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice Generator</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.19.0/iconfont/tabler-icons.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><i class="ti ti-file-invoice"></i><span>Invoice</span></div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-screen="invoices"><i class="ti ti-files"></i> Инвойсы</a>
+      <a href="#" class="nav-item" data-screen="new-invoice"><i class="ti ti-plus"></i> Новый инвойс</a>
+      <a href="#" class="nav-item" data-screen="templates"><i class="ti ti-template"></i> Шаблоны</a>
+      <a href="#" class="nav-item" data-screen="counterparties"><i class="ti ti-building"></i> Контрагенты</a>
+      <a href="#" class="nav-item" data-screen="service-items"><i class="ti ti-list"></i> Позиции</a>
+      <a href="#" class="nav-item" data-screen="my-companies"><i class="ti ti-id-badge"></i> Моя компания</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="/docs" target="_blank" class="nav-item"><i class="ti ti-api"></i> API docs</a>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- INVOICES -->
+    <section id="screen-invoices" class="screen active">
+      <div class="topbar">
+        <h1>Инвойсы</h1>
+        <button class="btn btn-primary" onclick="goTo('new-invoice')"><i class="ti ti-plus"></i> Новый инвойс</button>
+      </div>
+      <div class="content">
+        <div class="stats-row" id="stats-row">
+          <div class="stat-card"><div class="stat-label">Всего</div><div class="stat-value" id="stat-total">—</div></div>
+          <div class="stat-card"><div class="stat-label">Ожидают оплаты</div><div class="stat-value" id="stat-pending">—</div></div>
+          <div class="stat-card"><div class="stat-label">Оплачено</div><div class="stat-value" id="stat-paid">—</div></div>
+        </div>
+        <div class="table-header">
+          <input class="search-input" type="text" placeholder="Поиск…" id="search-input" oninput="filterInvoices()">
+
+        </div>
+        <table class="data-table">
+          <thead><tr>
+      <th><button class="sort-btn" data-sort="number" onclick="sortInvoices('number')">Номер <i class="ti ti-arrows-sort"></i></button></th>
+      <th><button class="sort-btn" data-sort="counterparty_name" onclick="sortInvoices('counterparty_name')">Контрагент <i class="ti ti-arrows-sort"></i></button></th>
+      <th><button class="sort-btn sort-desc" data-sort="date" onclick="sortInvoices('date')">Дата <i class="ti ti-arrows-sort"></i></button></th>
+      <th class="right"><button class="sort-btn" data-sort="total_amount" onclick="sortInvoices('total_amount')">Сумма <i class="ti ti-arrows-sort"></i></button></th>
+      <th>Действия</th>
+    </tr></thead>
+          <tbody id="invoices-body"><tr><td colspan="6" class="loading-cell"><span class="spinner"></span></td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- NEW INVOICE -->
+    <section id="screen-new-invoice" class="screen">
+      <div class="topbar">
+        <h1 id="form-title">Новый инвойс</h1>
+        <div class="topbar-actions">
+          <button class="btn" onclick="resetInvoiceForm()"><i class="ti ti-refresh"></i> Сбросить</button>
+          <button class="btn btn-primary" onclick="saveInvoice()"><i class="ti ti-device-floppy"></i> Сохранить</button>
+        </div>
+      </div>
+      <div class="content form-content">
+        <div class="form-card">
+          <div class="form-card-title">Основные данные</div>
+          <div class="form-grid two-col">
+            <div class="fg"><label>Номер инвойса</label><input type="text" id="f-number"></div>
+            <div class="fg"><label>Дата</label><input type="date" id="f-date"></div>
+            <div class="fg"><label>Контрагент</label><select id="f-counterparty"><option value="">— выбери —</option></select></div>
+            <div class="fg"><label>Моя компания</label><select id="f-my-company"><option value="">— выбери —</option></select></div>
+            <div class="fg"><label>Шаблон</label><select id="f-template"><option value="">— выбери —</option></select></div>
+            <div class="fg"><label>Валюта</label><select id="f-currency"><option value="EUR">EUR €</option><option value="USD">USD $</option><option value="UAH">UAH ₴</option></select></div>
+            <input type="hidden" id="f-due-date" value="">
+          </div>
+        </div>
+        <div class="form-card">
+          <div class="form-card-title">Итоговая сумма</div>
+          <div class="total-input-row">
+            <span class="currency-sym" id="f-currency-sym">€</span>
+            <input type="number" id="f-total" class="total-input" min="0" step="0.01" placeholder="0.00" oninput="recalcPreview()">
+          </div>
+          <p class="hint">Введи сумму — время рассчитается автоматически при сохранении</p>
+        </div>
+        <div class="form-card">
+          <div class="form-card-title">Позиции</div>
+          <table class="items-edit-table">
+            <thead><tr><th style="width:40%">Описание</th><th style="width:18%">Ставка/ч</th><th style="width:22%">Время (~)</th><th style="width:14%">Сумма (~)</th><th style="width:6%"></th></tr></thead>
+            <tbody id="items-body"></tbody>
+          </table>
+          <div style="display:flex;gap:12px;align-items:center;margin-top:8px">
+            <button class="add-item-btn" onclick="addItemRow()"><i class="ti ti-plus"></i> Добавить позицию</button>
+            <select id="service-item-select" style="font-size:13px;padding:5px 8px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);background:var(--surface);color:var(--text)">
+              <option value="">+ из библиотеки</option>
+            </select>
+          </div>
+          <div class="items-totals" id="items-totals"></div>
+        </div>
+        <div class="form-card">
+          <div class="form-card-title">Примечания</div>
+          <textarea id="f-notes" placeholder="Условия оплаты…"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- TEMPLATES -->
+    <section id="screen-templates" class="screen">
+      <div class="topbar">
+        <h1>Шаблоны</h1>
+        <button class="btn btn-primary" onclick="document.getElementById('tmpl-upload-input').click()"><i class="ti ti-upload"></i> Загрузить</button>
+        <input type="file" id="tmpl-upload-input" accept=".html,.docx" style="display:none" onchange="uploadTemplate(this)">
+      </div>
+      <div class="content"><div class="templates-grid" id="templates-grid"><div class="loading-cell"><span class="spinner"></span></div></div></div>
+    </section>
+
+    <!-- COUNTERPARTIES -->
+    <section id="screen-counterparties" class="screen">
+      <div class="topbar"><h1>Контрагенты</h1><button class="btn btn-primary" onclick="openCpModal()"><i class="ti ti-plus"></i> Добавить</button></div>
+      <div class="content"><div class="cp-grid" id="cp-grid"><div class="loading-cell"><span class="spinner"></span></div></div></div>
+    </section>
+
+    <!-- SERVICE ITEMS -->
+    <section id="screen-service-items" class="screen">
+      <div class="topbar"><h1>Библиотека позиций</h1><button class="btn btn-primary" onclick="openServiceModal()"><i class="ti ti-plus"></i> Добавить</button></div>
+      <div class="content">
+        <table class="data-table">
+          <thead><tr><th>Описание</th><th>Единица</th><th class="right">Ставка по умолч.</th><th>Ставки по компаниям</th><th></th></tr></thead>
+          <tbody id="service-items-body"><tr><td colspan="5" class="loading-cell"><span class="spinner"></span></td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- MY COMPANIES -->
+    <section id="screen-my-companies" class="screen">
+      <div class="topbar"><h1>Моя компания</h1><button class="btn btn-primary" onclick="openMcModal()"><i class="ti ti-plus"></i> Добавить</button></div>
+      <div class="content"><div class="cp-grid" id="mc-grid"><div class="loading-cell"><span class="spinner"></span></div></div></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- COUNTERPARTY MODAL -->
+<div class="modal-backdrop" id="cp-modal" style="display:none" onclick="if(event.target===this)closeCpModal()">
+  <div class="modal">
+    <div class="modal-header"><span id="cp-modal-title">Контрагент</span><button class="modal-close" onclick="closeCpModal()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="cp-id">
+      <div class="form-grid two-col">
+        <div class="fg" style="grid-column:span 2"><label>Название *</label><input type="text" id="cp-name"></div>
+        <div class="fg" style="grid-column:span 2"><label>Адрес</label><input type="text" id="cp-address"></div>
+        <div class="fg" style="grid-column:span 2"><label>Старый адрес</label><input type="text" id="cp-old-address"></div>
+        <div class="fg"><label>ICO / ЄДРПОУ</label><input type="text" id="cp-company-number"></div>
+        <div class="fg"><label>EU VAT / ІПН</label><input type="text" id="cp-eu-vat"></div>
+        <div class="fg"><label>IBAN</label><input type="text" id="cp-iban"></div>
+        <div class="fg"><label>SWIFT</label><input type="text" id="cp-swift"></div>
+        <div class="fg" style="grid-column:span 2"><label>Примечания</label><textarea id="cp-notes" rows="2"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeCpModal()">Отмена</button><button class="btn btn-primary" onclick="saveCp()">Сохранить</button></div>
+  </div>
+</div>
+
+<!-- MY COMPANY MODAL -->
+<div class="modal-backdrop" id="mc-modal" style="display:none" onclick="if(event.target===this)closeMcModal()">
+  <div class="modal">
+    <div class="modal-header"><span id="mc-modal-title">Моя компания</span><button class="modal-close" onclick="closeMcModal()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="mc-id">
+      <div class="form-grid two-col">
+        <div class="fg" style="grid-column:span 2"><label>Название *</label><input type="text" id="mc-name"></div>
+        <div class="fg" style="grid-column:span 2"><label>Адрес</label><input type="text" id="mc-address"></div>
+        <div class="fg"><label>Страна</label><input type="text" id="mc-country"></div>
+        <div class="fg"><label>Company number</label><input type="text" id="mc-company-number"></div>
+        <div class="fg"><label>IBAN</label><input type="text" id="mc-iban"></div>
+        <div class="fg"><label>SWIFT</label><input type="text" id="mc-swift"></div>
+        <div class="fg" style="grid-column:span 2"><label>VAT</label><input type="text" id="mc-vat"></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeMcModal()">Отмена</button><button class="btn btn-primary" onclick="saveMc()">Сохранить</button></div>
+  </div>
+</div>
+
+<!-- SERVICE ITEM MODAL -->
+<div class="modal-backdrop" id="service-modal" style="display:none" onclick="if(event.target===this)closeServiceModal()">
+  <div class="modal">
+    <div class="modal-header"><span id="service-modal-title">Позиция</span><button class="modal-close" onclick="closeServiceModal()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="service-id">
+      <div class="form-grid two-col">
+        <div class="fg" style="grid-column:span 2"><label>Описание *</label><input type="text" id="service-description"></div>
+        <div class="fg"><label>Единица</label><input type="text" id="service-unit" value="Hours"></div>
+        <div class="fg"><label>Ставка по умолчанию</label><input type="number" id="service-rate" value="100"></div>
+      </div>
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+        <div id="service-rates-list"></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeServiceModal()">Отмена</button><button class="btn btn-primary" onclick="saveService()">Сохранить</button></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

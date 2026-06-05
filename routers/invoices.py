@@ -179,6 +179,10 @@ async def generate_pdf(inv_id: int, db: Session = Depends(get_db)):
         pdf_bytes = await generate_invoice_pdf(context, template_file)
     except FileNotFoundError as e:
         raise HTTPException(500, str(e))
+    except Exception as e:
+        import traceback
+        # Возвращаем полный traceback в теле ответа — приватная утилита, не прод.
+        raise HTTPException(500, f"PDF generation failed: {type(e).__name__}: {e}\n\n{traceback.format_exc()}")
     with open(str(pdf_path), "wb") as f:
         f.write(pdf_bytes)
 

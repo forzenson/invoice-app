@@ -2,6 +2,7 @@ const API = '';
 let allInvoices = [], filterStatus = '', editingInvoiceId = null;
 let editingCpId = null, editingMcId = null, editingServiceId = null;
 let itemRows = [];
+let serviceItemsCache = [];
 const CURRENCY_SYMBOLS = { EUR: '€', USD: '$', UAH: '₴' };
 const STATUS_LABELS = { draft: 'Черновик', sent: 'Ожидает', paid: 'Оплачен' };
 
@@ -210,7 +211,9 @@ async function initNewInvoiceForm() {
     document.getElementById('f-currency-sym').textContent = '€';
     itemRows = [];
   }
-  await Promise.all([loadCpSelect(), loadTmplSelect(), loadMcSelect(), loadServiceSelect()]);
+  // loadMcSelect должен закончиться ДО loadServiceSelect — ставки зависят от выбранной компании
+  await Promise.all([loadCpSelect(), loadTmplSelect(), loadMcSelect()]);
+  await loadServiceSelect();
   renderItemRows();
   recalcPreview();
 }
@@ -253,17 +256,29 @@ async function loadMcSelect() {
   } catch {}
 }
 
+function rateForCompany(serviceItem, mcId) {
+  // Ставка для выбранной компании, иначе default_rate
+  if (mcId && serviceItem.rates) {
+    const r = serviceItem.rates.find(r => r.my_company_id === mcId);
+    if (r) return r.rate;
+  }
+  return serviceItem.default_rate;
+}
+
+function renderServiceSelect() {
+  const mcId = parseInt(document.getElementById('f-my-company').value) || null;
+  const sel = document.getElementById('service-item-select');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">+ из библиотеки</option>' + serviceItemsCache.map(i => {
+    const rate = rateForCompany(i, mcId);
+    return `<option value="${i.id}" data-desc="${i.description}" data-unit="${i.unit}" data-rate="${rate}">${i.description} (${rate}€/h)</option>`;
+  }).join('');
+}
+
 async function loadServiceSelect() {
   try {
-    const items = await api('GET', '/service-items/');
-    const mcId = parseInt(document.getElementById('f-my-company').value) || null;
-    const sel = document.getElementById('service-item-select');
-    sel.innerHTML = '<option value="">+ из библиотеки</option>' + items.map(i => {
-      // Берём ставку для выбранной компании, иначе default
-      const companyRate = mcId && i.rates ? (i.rates.find(r => r.my_company_id === mcId) || {}).rate : null;
-      const rate = companyRate || i.default_rate;
-      return `<option value="${i.id}" data-desc="${i.description}" data-unit="${i.unit}" data-rate="${rate}">${i.description} (${rate}€/h)</option>`;
-    }).join('');
+    serviceItemsCache = await api('GET', '/service-items/');
+    renderServiceSelect();
   } catch {}
 }
 
@@ -273,13 +288,36 @@ document.getElementById('f-currency').addEventListener('change', function() {
 });
 
 document.getElementById('f-my-company').addEventListener('change', function() {
-  loadServiceSelect();
+  renderServiceSelect();
+  rerateRowsForCompany();
 });
+
+function rerateRowsForCompany() {
+  const mcId = parseInt(document.getElementById('f-my-company').value) || null;
+  let changed = 0;
+  itemRows.forEach(row => {
+    if (!row.service_item_id) return;  // строка введена вручную — не трогаем
+    const item = serviceItemsCache.find(s => s.id === row.service_item_id);
+    if (!item) return;
+    const newRate = rateForCompany(item, mcId);
+    if (newRate !== row.rate) { row.rate = newRate; changed++; }
+  });
+  if (changed) {
+    renderItemRows();
+    recalcPreview();
+    toast(`Обновлены ставки в ${changed} ${changed === 1 ? 'позиции' : 'позициях'}`, 'success');
+  }
+}
 
 document.getElementById('service-item-select').addEventListener('change', function() {
   const opt = this.options[this.selectedIndex];
   if (!opt.value) return;
-  itemRows.push({ description: opt.dataset.desc, unit: opt.dataset.unit, rate: parseFloat(opt.dataset.rate) });
+  itemRows.push({
+    service_item_id: parseInt(opt.value),
+    description: opt.dataset.desc,
+    unit: opt.dataset.unit,
+    rate: parseFloat(opt.dataset.rate),
+  });
   this.value = '';
   renderItemRows();
   recalcPreview();

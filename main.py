@@ -11,18 +11,19 @@ from routers import my_company, service_items
 
 Base.metadata.create_all(bind=engine)
 
-# builtin_templates — всегда в репозитории, никогда не перезаписываются volume
-# TEMPLATES_DIR    — volume или локальная папка, куда пользователь загружает шаблоны
+# builtin_templates — канонические шаблоны из репозитория, обновляются каждым деплоем.
+# TEMPLATES_DIR    — volume или локальная папка, куда пользователь может загружать
+#                    свои шаблоны с УНИКАЛЬНЫМИ именами (не пересекающимися с builtin).
 BUILTIN_DIR = Path(__file__).parent / "builtin_templates"
 TEMPLATES_DIR = Path(os.environ.get("TEMPLATES_DIR", "templates"))
 TEMPLATES_DIR.mkdir(exist_ok=True)
 
-# Копируем встроенные шаблоны в TEMPLATES_DIR при каждом старте
-# (перезаписываем только если файл отсутствует — не трогаем загруженные пользователем)
+# Всегда перезаписываем builtin-копии в TEMPLATES_DIR: builtin — источник истины
+# (если просто проверять exists, в volume застревает старая версия и фикс дизайна
+# из репозитория не доезжает до прода).
 for tmpl_file in BUILTIN_DIR.glob("*"):
     dst = TEMPLATES_DIR / tmpl_file.name
-    if not dst.exists():
-        shutil.copy(tmpl_file, dst)
+    shutil.copy(tmpl_file, dst)
 
 # Seed БД
 from sqlalchemy.orm import Session

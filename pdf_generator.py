@@ -76,15 +76,15 @@ def generate_invoice_pdf(context: dict) -> bytes:
         Paragraph('INVOICE', S_TITLE),
         Spacer(1, 2*mm),
         Paragraph(co['company_name'], S_CO_NAME),
-        Paragraph(co['company_address'], S_CO_DETAIL),
-        Paragraph(co['company_country'], S_CO_DETAIL),
-        Paragraph(f"Reg: {co['company_number']}", S_CO_DETAIL),
-        Paragraph(f"VAT: {co['company_vat']}", S_CO_DETAIL),
-        Paragraph(f"IBAN: {co['company_iban']}", S_CO_DETAIL),
-        Paragraph(f"SWIFT: {co['company_swift']}", S_CO_DETAIL),
     ]
+    if co.get('company_address'): right.append(Paragraph(co['company_address'], S_CO_DETAIL))
+    if co.get('company_country'): right.append(Paragraph(co['company_country'], S_CO_DETAIL))
+    if co.get('company_number'): right.append(Paragraph(f"Reg: {co['company_number']}", S_CO_DETAIL))
+    if co.get('company_vat'):    right.append(Paragraph(f"VAT: {co['company_vat']}", S_CO_DETAIL))
+    if co.get('company_iban'):   right.append(Paragraph(f"IBAN: {co['company_iban']}", S_CO_DETAIL))
+    if co.get('company_swift'):  right.append(Paragraph(f"SWIFT: {co['company_swift']}", S_CO_DETAIL))
 
-    header = Table([[left, right]], colWidths=[90*mm, 84*mm])
+    header = Table([[left, right]], colWidths=[90*mm, 80*mm])
     header.setStyle(TableStyle([
         ('VALIGN',        (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING',   (0,0), (-1,-1), 0),
@@ -99,7 +99,9 @@ def generate_invoice_pdf(context: dict) -> bytes:
 
     # ── BILL TO ───────────────────────────────────────────────────────────────
     elems.append(Paragraph('BILL TO', S_LABEL))
+    elems.append(Spacer(1, 1.5*mm))
     elems.append(Paragraph(context['cp_name'], S_BILL_NAME))
+    elems.append(Spacer(1, 0.5*mm))
     if context.get('cp_address'):
         elems.append(Paragraph(context['cp_address'], S_BILL_DET))
     if context.get('cp_old_address'):
@@ -112,7 +114,9 @@ def generate_invoice_pdf(context: dict) -> bytes:
     elems.append(Spacer(1, 8*mm))
 
     # ── ТАБЛИЦА ───────────────────────────────────────────────────────────────
-    COL_W = [8*mm, 66*mm, 14*mm, 26*mm, 22*mm, 26*mm]
+    # Content width = 210mm - 20mm L - 20mm R = 170mm. All tables match this width.
+    # Columns: # | Description | Unit | Rate | Hours | Amount
+    COL_W = [8*mm, 64*mm, 18*mm, 24*mm, 20*mm, 36*mm]
 
     thead = [
         Paragraph('#',              S_TH),
@@ -154,7 +158,9 @@ def generate_invoice_pdf(context: dict) -> bytes:
         Paragraph(f'Total, {cur}', S_TOTAL_L),
         Paragraph(f"{context['total_amount']:,.2f}", S_TOTAL_V),
     ]]
-    total_tbl = Table(total_data, colWidths=[90*mm, 40*mm, 44*mm])
+    # Total table: last col (36mm) aligns with items Amount column → LINEABOVE
+    # spans the rightmost 80mm and ends exactly at the items table right edge.
+    total_tbl = Table(total_data, colWidths=[90*mm, 44*mm, 36*mm])
     total_tbl.setStyle(TableStyle([
         ('LINEABOVE',     (1,0), (2,0),  1.5, C_BLACK),
         ('TOPPADDING',    (0,0), (-1,-1), 8),

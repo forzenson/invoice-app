@@ -7,3 +7,7 @@ venv/
 invoices.db
 pdfs/
 *.pdf
+*.png
+preview_*
+preview_variants/
+test_*

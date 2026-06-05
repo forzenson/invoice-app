@@ -143,13 +143,7 @@ def generate_pdf(inv_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "Invoice not found")
 
     template_file = inv.template.filename if inv.template else "invoice_default.html"
-    template_path = TEMPLATES_DIR / template_file
-
-    if not template_path.exists():
-        # fallback to local templates dir
-        template_path = Path("templates") / template_file
-    if not template_path.exists():
-        raise HTTPException(500, f"Template '{template_file}' not found")
+    # Резолв пути к шаблону живёт внутри pdf_generator.generate_invoice_pdf
 
     cp = inv.counterparty
     mc = inv.my_company
@@ -181,7 +175,10 @@ def generate_pdf(inv_id: int, db: Session = Depends(get_db)):
 
     from pdf_generator import generate_invoice_pdf
 
-    pdf_bytes = generate_invoice_pdf(context)
+    try:
+        pdf_bytes = generate_invoice_pdf(context, template_file)
+    except FileNotFoundError as e:
+        raise HTTPException(500, str(e))
     with open(str(pdf_path), "wb") as f:
         f.write(pdf_bytes)
 

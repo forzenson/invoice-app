@@ -1,0 +1,5 @@
+# Railway/nixpacks: после pip install ставим Chromium с системными зависимостями.
+# `--with-deps` дёргает apt-get install для нужных .so — на nixpacks билд-образе
+# apt доступен из-под root, так что это работает.
+[phases.build]
+cmds = ["python -m playwright install --with-deps chromium"]

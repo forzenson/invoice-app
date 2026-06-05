@@ -131,7 +131,7 @@ function renderInvoices() {
           <button class="btn btn-sm btn-pdf" onclick="generateAndDownload(${inv.id},'${inv.number}')" title="Скачать PDF"><i class="ti ti-download"></i> PDF</button>
           <button class="btn btn-sm btn-edit" onclick="editInvoice(${inv.id})"><i class="ti ti-edit"></i> Изменить</button>
           <button class="btn btn-sm btn-copy" onclick="duplicateInvoice(${inv.id})"><i class="ti ti-copy"></i> Дублировать</button>
-
+          <button class="btn btn-sm btn-delete" onclick="deleteInvoice(${inv.id},'${inv.number}')"><i class="ti ti-trash"></i> Удалить</button>
         </div>
       </td>
     </tr>`;

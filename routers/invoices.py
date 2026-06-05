@@ -137,7 +137,7 @@ def download_pdf(inv_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/{inv_id}/generate-pdf", response_model=dict)
-def generate_pdf(inv_id: int, db: Session = Depends(get_db)):
+async def generate_pdf(inv_id: int, db: Session = Depends(get_db)):
     inv = db.query(Invoice).get(inv_id)
     if not inv:
         raise HTTPException(404, "Invoice not found")
@@ -176,7 +176,7 @@ def generate_pdf(inv_id: int, db: Session = Depends(get_db)):
     from pdf_generator import generate_invoice_pdf
 
     try:
-        pdf_bytes = generate_invoice_pdf(context, template_file)
+        pdf_bytes = await generate_invoice_pdf(context, template_file)
     except FileNotFoundError as e:
         raise HTTPException(500, str(e))
     with open(str(pdf_path), "wb") as f:

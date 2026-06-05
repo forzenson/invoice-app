@@ -5,12 +5,13 @@ PDF-генератор инвойсов.
 получаем PDF. Это даёт полный контроль над дизайном через CSS, и превью
 шаблона в обычном браузере выглядит ровно так же, как итоговый PDF.
 
-Контракт `generate_invoice_pdf(context)` сохранён — роутер не меняется.
+Контракт `generate_invoice_pdf(context)` сохранён — роутер не меняется
+(кроме await — функция теперь async, см. FastAPI handler).
 """
 import os
 from pathlib import Path
 from jinja2 import Template
-from playwright.sync_api import sync_playwright
+from playwright.async_api import async_playwright
 
 
 BUILTIN_TEMPLATES_DIR = Path(__file__).parent / "builtin_templates"
@@ -38,7 +39,7 @@ def _render_html(context: dict, template_filename: str = DEFAULT_TEMPLATE) -> st
     return Template(path.read_text(encoding="utf-8")).render(**context)
 
 
-def generate_invoice_pdf(context: dict, template_filename: str = DEFAULT_TEMPLATE) -> bytes:
+async def generate_invoice_pdf(context: dict, template_filename: str = DEFAULT_TEMPLATE) -> bytes:
     """
     Сгенерировать PDF инвойса.
 
@@ -46,22 +47,25 @@ def generate_invoice_pdf(context: dict, template_filename: str = DEFAULT_TEMPLAT
         invoice_number, invoice_date, due_date, currency, total_amount, notes,
         company_*, cp_*, items (list of dicts).
     template_filename — имя HTML-шаблона из templates/ или builtin_templates/.
+
+    Async, потому что внутри FastAPI uvicorn — родная асинхронная среда,
+    и sync_playwright там конфликтует с уже работающим event loop.
     """
     html = _render_html(context, template_filename)
 
-    with sync_playwright() as p:
-        # Используем системный chromium без sandbox — нужно для контейнеров
-        # вроде Railway, где нет user namespaces.
-        browser = p.chromium.launch(args=["--no-sandbox", "--disable-dev-shm-usage"])
+    async with async_playwright() as p:
+        # --no-sandbox обязательно для контейнеров без user namespaces (Railway).
+        # --disable-dev-shm-usage обходит проблему маленького /dev/shm в Docker.
+        browser = await p.chromium.launch(args=["--no-sandbox", "--disable-dev-shm-usage"])
         try:
-            page = browser.new_page()
-            page.set_content(html, wait_until="networkidle")
-            pdf_bytes = page.pdf(
+            page = await browser.new_page()
+            await page.set_content(html, wait_until="networkidle")
+            pdf_bytes = await page.pdf(
                 format="A4",
                 margin={"top": "0", "bottom": "0", "left": "0", "right": "0"},
                 print_background=True,
             )
         finally:
-            browser.close()
+            await browser.close()
 
     return pdf_bytes

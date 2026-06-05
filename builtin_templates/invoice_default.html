@@ -59,8 +59,8 @@
     display: flex; align-items: baseline; gap: 32px;
     min-width: 50%; justify-content: flex-end;
   }
-  .total-label { font-size: 10pt; font-weight: 700; color: #444; }
-  .total-value { font-size: 18pt; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .total-label { font-size: 18pt; font-weight: 700; color: #1a1a1a; }
+  .total-value { font-size: 18pt; font-weight: 700; color: #1a1a1a; font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
@@ -94,11 +94,8 @@
     <div class="name">{{ cp_name }}</div>
     <div class="details">
       {% if cp_address %}<div>{{ cp_address }}</div>{% endif %}
-      <div class="ids">
-        {% if cp_company_number %}Reg: {{ cp_company_number }}{% endif %}
-        {% if cp_company_number and cp_eu_vat %} &nbsp;·&nbsp; {% endif %}
-        {% if cp_eu_vat %}EU VAT: {{ cp_eu_vat }}{% endif %}
-      </div>
+      {% if cp_company_number %}<div>Reg: {{ cp_company_number }}</div>{% endif %}
+      {% if cp_eu_vat %}<div>EU VAT: {{ cp_eu_vat }}</div>{% endif %}
     </div>
   </section>
   <table class="items">

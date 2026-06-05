@@ -1,5 +1,7 @@
 from pydantic import BaseModel
-from datetime import date
+# Импорт переименован, чтобы не конфликтовать с полями `date` в моделях ниже
+# (поле с default=None затирает имя типа, и Pydantic резолвит Optional[date_type] → None)
+from datetime import date as date_type
 from typing import Optional
 from models import InvoiceStatus
 
@@ -89,8 +91,8 @@ class InvoiceItemInput(BaseModel):
 
 class InvoiceCreate(BaseModel):
     number: str
-    date: date
-    due_date: Optional[date] = None
+    date: date_type
+    due_date: Optional[date_type] = None
     currency: str = "EUR"
     total_amount: float
     counterparty_id: int
@@ -101,8 +103,8 @@ class InvoiceCreate(BaseModel):
 
 class InvoiceUpdate(BaseModel):
     number: Optional[str] = None
-    date: Optional[date] = None
-    due_date: Optional[date] = None
+    date: Optional[date_type] = None
+    due_date: Optional[date_type] = None
     currency: Optional[str] = None
     total_amount: Optional[float] = None
     counterparty_id: Optional[int] = None
@@ -115,8 +117,8 @@ class InvoiceUpdate(BaseModel):
 class InvoiceOut(BaseModel):
     id: int
     number: str
-    date: date
-    due_date: Optional[date]
+    date: date_type
+    due_date: Optional[date_type]
     currency: str
     total_amount: float
     status: InvoiceStatus
@@ -132,7 +134,7 @@ class InvoiceOut(BaseModel):
 class InvoiceListItem(BaseModel):
     id: int
     number: str
-    date: date
+    date: date_type
     total_amount: float
     currency: str
     status: InvoiceStatus

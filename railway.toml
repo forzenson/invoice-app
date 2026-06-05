@@ -1,3 +1,5 @@
 [deploy]
-startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
+# startCommand НЕ задаём специально: Railway запустил бы его без шелла,
+# и $PORT в нём пришёл бы буквально. Используем CMD из Dockerfile —
+# там шелл разворачивает ${PORT:-8000} корректно.
 healthcheckPath = "/"

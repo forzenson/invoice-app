@@ -77,14 +77,15 @@ def update_invoice(inv_id: int, data: InvoiceUpdate, db: Session = Depends(get_d
     if not inv:
         raise HTTPException(404, "Invoice not found")
     update_data = data.model_dump(exclude_unset=True)
-    items_data = update_data.pop("items", None)
+    update_data.pop("items", None)  # items обрабатываем отдельно ниже
     for field, value in update_data.items():
         setattr(inv, field, value)
-    if items_data is not None:
+    # data.items — Pydantic-модели (distribute_time ждёт именно их, не dict-ы)
+    if data.items is not None:
         for old_item in inv.items:
             db.delete(old_item)
         db.flush()
-        for item_data in distribute_time(data.total_amount or inv.total_amount, items_data):
+        for item_data in distribute_time(data.total_amount or inv.total_amount, data.items):
             db.add(InvoiceItem(invoice_id=inv.id, **item_data))
     db.commit()
     db.refresh(inv)

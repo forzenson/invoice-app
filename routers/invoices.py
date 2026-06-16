@@ -1,10 +1,22 @@
 import os
+import re
 from datetime import date as date_type
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
+
+
+def _safe_filename_part(s: str | None) -> str:
+    """Чистим имя для использования в filename — выкидываем запрещённые символы
+    и схлопываем пробелы. Точку оставляем (s.r.o. → s.r.o.), но в конце имени
+    обрезаем — Windows не любит файлы, заканчивающиеся точкой."""
+    if not s:
+        return ""
+    s = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", s)
+    s = re.sub(r"\s+", " ", s).strip().rstrip(".")
+    return s
 
 from database import get_db
 from models import Invoice, InvoiceItem, InvoiceTemplate, Counterparty, InvoiceStatus, MyCompany
@@ -133,7 +145,15 @@ def download_pdf(inv_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "Invoice not found")
     if not inv.pdf_path or not os.path.exists(inv.pdf_path):
         raise HTTPException(404, "PDF not generated yet")
-    return FileResponse(inv.pdf_path, media_type="application/pdf", filename=f"{inv.number}.pdf")
+
+    # Имя файла: МояКомпания_Контрагент_Номер.pdf
+    parts = [
+        _safe_filename_part(inv.my_company.name if inv.my_company else None),
+        _safe_filename_part(inv.counterparty.name if inv.counterparty else None),
+        _safe_filename_part(inv.number),
+    ]
+    filename = "_".join(p for p in parts if p) + ".pdf"
+    return FileResponse(inv.pdf_path, media_type="application/pdf", filename=filename)
 
 
 @router.post("/{inv_id}/generate-pdf", response_model=dict)

@@ -30,7 +30,7 @@ def upload_template(
 ):
     ext = Path(file.filename).suffix.lower()
     if ext not in ALLOWED_EXTENSIONS:
-        raise HTTPException(400, f"Поддерживаются только файлы: {', '.join(ALLOWED_EXTENSIONS)}")
+        raise HTTPException(400, f"Only these file types are supported: {', '.join(ALLOWED_EXTENSIONS)}")
 
     safe_name = file.filename.replace(" ", "_")
     dest = TEMPLATES_DIR / safe_name

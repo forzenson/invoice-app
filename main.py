@@ -54,8 +54,14 @@ from sqlalchemy.orm import Session
 from models import InvoiceTemplate
 _db = Session(engine)
 if not _db.query(InvoiceTemplate).first():
-    _db.add(InvoiceTemplate(name="Стандартный EN", filename="invoice_default.html"))
+    _db.add(InvoiceTemplate(name="Standard EN", filename="invoice_default.html"))
     _db.commit()
+else:
+    # One-time rename of the previously seeded Russian name to English.
+    legacy = _db.query(InvoiceTemplate).filter(InvoiceTemplate.name == "Стандартный EN").first()
+    if legacy:
+        legacy.name = "Standard EN"
+        _db.commit()
 _db.close()
 
 app = FastAPI(title="Invoice Generator", version="1.0.0", docs_url="/docs")

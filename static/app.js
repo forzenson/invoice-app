@@ -121,6 +121,7 @@ function renderInvoices() {
     return `<tr>
       <td><span class="invoice-number">${inv.number}</span></td>
       <td>${inv.counterparty_name}</td>
+      <td>${inv.my_company_name || '—'}</td>
       <td>${d}</td>
       <td class="right" style="font-family:var(--font-mono)">${sym} ${amt}</td>
       <td>

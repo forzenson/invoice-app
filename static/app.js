@@ -611,8 +611,8 @@ async function loadMyCompanies() {
         <div class="cp-detail">
           ${mc.country ? mc.country + '<br>' : ''}
           ${mc.company_number ? `Company: ${mc.company_number}<br>` : ''}
-          ${mc.iban ? `IBAN: ${mc.iban}<br>` : ''}
-          ${mc.swift ? `SWIFT: ${mc.swift}` : ''}
+          ${mc.iban ? `IBAN: ${mc.iban}<br>` : (mc.account_number ? `Account: ${mc.account_number}<br>` : '')}
+          ${mc.swift ? `SWIFT: ${mc.swift}` : (mc.routing_number ? `Routing: ${mc.routing_number}` : '')}
         </div>
         <div class="cp-actions">
           <button class="btn btn-sm" onclick="openMcModal(${mc.id})"><i class="ti ti-edit"></i> Edit</button>

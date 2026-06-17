@@ -119,9 +119,9 @@
             <thead><tr><th style="width:40%">Description</th><th style="width:18%">Rate/h</th><th style="width:22%">Time (~)</th><th style="width:14%">Amount (~)</th><th style="width:6%"></th></tr></thead>
             <tbody id="items-body"></tbody>
           </table>
-          <div style="display:flex;gap:12px;align-items:center;margin-top:8px">
+          <div class="items-add-row">
             <button class="add-item-btn" onclick="addItemRow()"><i class="ti ti-plus"></i> Add item</button>
-            <select id="service-item-select" style="font-size:13px;padding:5px 8px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);background:var(--surface);color:var(--text)">
+            <select id="service-item-select" class="items-add-select">
               <option value="">+ from library</option>
             </select>
           </div>

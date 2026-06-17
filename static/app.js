@@ -277,7 +277,7 @@ async function loadCpSelect() {
     const cps = await api('GET', '/counterparties/');
     const sel = document.getElementById('f-counterparty');
     const cur = sel.value;
-    sel.innerHTML = '<option value="">— client —</option>' + cps.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    sel.innerHTML = '<option value=""></option>' + cps.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     if (cur) sel.value = cur;
   } catch {}
 }
@@ -298,9 +298,8 @@ async function loadMcSelect() {
     const mcs = await api('GET', '/my-companies/');
     const sel = document.getElementById('f-my-company');
     const cur = sel.value;
-    sel.innerHTML = '<option value="">— my company —</option>' + mcs.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    sel.innerHTML = '<option value=""></option>' + mcs.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     if (cur) sel.value = cur;
-    else if (mcs.length) sel.value = mcs[0].id;
   } catch {}
 }
 

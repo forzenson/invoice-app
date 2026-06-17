@@ -149,6 +149,9 @@
     <section id="screen-service-items" class="screen">
       <div class="topbar"><h1>Библиотека позиций</h1><button class="btn btn-primary" onclick="openServiceModal()"><i class="ti ti-plus"></i> Добавить</button></div>
       <div class="content">
+        <div class="table-header">
+          <input class="search-input" type="text" placeholder="Поиск по названию…" id="service-search" oninput="renderServiceItems()">
+        </div>
         <table class="data-table">
           <thead><tr><th>Описание</th><th>Единица</th><th class="right">Ставка по умолч.</th><th>Ставки по компаниям</th><th></th></tr></thead>
           <tbody id="service-items-body"><tr><td colspan="5" class="loading-cell"><span class="spinner"></span></td></tr></tbody>

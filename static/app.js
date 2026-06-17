@@ -671,32 +671,43 @@ async function deleteMc(id) {
 }
 
 // ── SERVICE ITEMS ──
+let allServiceItems = [];
+
 async function loadServiceItems() {
   try {
-    const items = await api('GET', '/service-items/');
-    const tbody = document.getElementById('service-items-body');
-    if (!items.length) {
-      tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i class="ti ti-list-off"></i><p>Позиций нет — добавь первую</p></div></td></tr>`;
-      return;
-    }
-    tbody.innerHTML = items.map(item => {
-      const ratesList = item.rates && item.rates.length
-        ? item.rates.map(r => `<span style="display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:2px 8px;font-size:11px;margin:2px">${r.my_company_name}: ${r.rate}€/h</span>`).join(' ')
-        : `<span style="color:var(--text-muted);font-size:11px">Нет ставок</span>`;
-      return `<tr>
-        <td>${item.description}</td>
-        <td>${item.unit}</td>
-        <td class="right" style="font-family:var(--font-mono)">${item.default_rate} €/h</td>
-        <td>${ratesList}</td>
-        <td>
-          <div class="row-actions">
-            <button class="btn btn-sm btn-edit" onclick="openServiceModal(${item.id})"><i class="ti ti-edit"></i></button>
-            <button class="btn btn-sm btn-delete" onclick="deleteService(${item.id})"><i class="ti ti-trash"></i> Удалить</button>
-          </div>
-        </td>
-      </tr>`;
-    }).join('');
+    allServiceItems = await api('GET', '/service-items/');
+    renderServiceItems();
   } catch (e) { toast(e.message, 'error'); }
+}
+
+function renderServiceItems() {
+  const q = (document.getElementById('service-search')?.value || '').trim().toLowerCase();
+  // Подстрочный matching: q найдётся в любом месте описания, не только в начале.
+  const items = q
+    ? allServiceItems.filter(i => (i.description || '').toLowerCase().includes(q))
+    : allServiceItems;
+  const tbody = document.getElementById('service-items-body');
+  if (!items.length) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i class="ti ti-list-off"></i><p>${q ? 'Ничего не найдено' : 'Позиций нет — добавь первую'}</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = items.map(item => {
+    const ratesList = item.rates && item.rates.length
+      ? item.rates.map(r => `<span style="display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:2px 8px;font-size:11px;margin:2px">${r.my_company_name}: ${r.rate}€/h</span>`).join(' ')
+      : `<span style="color:var(--text-muted);font-size:11px">Нет ставок</span>`;
+    return `<tr>
+      <td>${item.description}</td>
+      <td>${item.unit}</td>
+      <td class="right" style="font-family:var(--font-mono)">${item.default_rate} €/h</td>
+      <td>${ratesList}</td>
+      <td>
+        <div class="row-actions">
+          <button class="btn btn-sm btn-edit" onclick="openServiceModal(${item.id})"><i class="ti ti-edit"></i></button>
+          <button class="btn btn-sm btn-delete" onclick="deleteService(${item.id})"><i class="ti ti-trash"></i> Удалить</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
 }
 
 async function openServiceModal(id) {

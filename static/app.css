@@ -120,7 +120,7 @@ input::placeholder, textarea::placeholder { color: var(--placeholder); }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px 26px; margin-bottom: 18px; box-shadow: var(--shadow-subtle); }
-.form-card-title { font-size: 13px; font-weight: 600; color: var(--text-hint); margin-bottom: 18px; text-transform: uppercase; letter-spacing: 0.5px; }
+.form-card-title { font-size: 13px; font-weight: 600; color: var(--text-hint); margin-bottom: 18px; text-transform: uppercase; letter-spacing: 0.5px; padding-left: 12px; }
 .form-grid { display: grid; gap: 14px; }
 .two-col { grid-template-columns: 1fr 1fr; }
 .fg { display: flex; flex-direction: column; gap: 7px; }

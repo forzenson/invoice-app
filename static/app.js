@@ -130,7 +130,7 @@ function renderInvoices() {
   }
   tbody.innerHTML = list.map(inv => {
     const sym = CURRENCY_SYMBOLS[inv.currency] || inv.currency;
-    const amt = inv.total_amount.toLocaleString('de-DE', {minimumFractionDigits: 2});
+    const amt = inv.total_amount.toLocaleString('en-US', {minimumFractionDigits: 2});
     const d = new Date(inv.date).toLocaleDateString('ru-RU');
     return `<tr>
       <td><span class="invoice-number">${inv.number}</span></td>
@@ -427,11 +427,11 @@ function recalcPreview() {
     const tp = document.getElementById(`tp-${i}`);
     const ap = document.getElementById(`ap-${i}`);
     if (tp) tp.textContent = `~${h}:${String(m).padStart(2,'0')}`;
-    if (ap) ap.textContent = `${sym} ${amount.toLocaleString('de-DE', {minimumFractionDigits: 2})}`;
+    if (ap) ap.textContent = `${sym} ${amount.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
   });
   totalsEl.innerHTML = `
     <div class="total-line">${results.map((r, i) => `${r.time} × ${sym}${itemRows[i].rate}`).join(' + ')}</div>
-    <div class="total-grand">${sym} ${total.toLocaleString('de-DE', {minimumFractionDigits: 2})}</div>`;
+    <div class="total-grand">${sym} ${total.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>`;
 }
 
 async function saveInvoice() {
@@ -537,7 +537,7 @@ async function loadCounterparties() {
           ${cp.eu_vat ? `EU VAT: ${cp.eu_vat}<br>` : ''}
           ${cp.iban ? `IBAN: ${cp.iban}` : ''}
         </div>
-        <div class="cp-stats"><span>${cp.invoice_count} invoices</span><span>€ ${(cp.total_billed||0).toLocaleString('de-DE',{maximumFractionDigits:0})}</span></div>
+        <div class="cp-stats"><span>${cp.invoice_count} invoices</span><span>€ ${(cp.total_billed||0).toLocaleString('en-US',{maximumFractionDigits:0})}</span></div>
         <div class="cp-actions">
           <button class="btn btn-sm" onclick="openCpModal(${cp.id})"><i class="ti ti-edit"></i> Edit</button>
           <button class="btn btn-sm btn-delete" onclick="deleteCp(${cp.id})"><i class="ti ti-trash"></i> Delete</button>

@@ -314,7 +314,7 @@ function renderServiceSelect() {
   const mcId = parseInt(document.getElementById('f-my-company').value) || null;
   const sel = document.getElementById('service-item-select');
   if (!sel) return;
-  sel.innerHTML = '<option value="">+ from library</option>' + serviceItemsCache.map(i => {
+  sel.innerHTML = '<option value="">+ Add item</option>' + serviceItemsCache.map(i => {
     const rate = rateForCompany(i, mcId);
     return `<option value="${i.id}" data-desc="${i.description}" data-unit="${i.unit}" data-rate="${rate}">${i.description} (${rate}€/h)</option>`;
   }).join('');

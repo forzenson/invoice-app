@@ -186,7 +186,6 @@ async function editInvoice(id) {
     document.getElementById('f-counterparty').value = inv.counterparty_id;
     document.getElementById('f-template').value = inv.template_id;
     document.getElementById('f-my-company').value = inv.my_company_id || '';
-    document.getElementById('f-notes').value = inv.notes || '';
     document.getElementById('f-currency-sym').textContent = CURRENCY_SYMBOLS[inv.currency] || '€';
     itemRows = inv.items.map(i => ({ description: i.description, unit: i.unit, rate: i.rate }));
     renderItemRows();
@@ -205,7 +204,6 @@ async function initNewInvoiceForm() {
     document.getElementById('f-due-date').value = '';
     document.getElementById('f-currency').value = 'EUR';
     document.getElementById('f-total').value = '';
-    document.getElementById('f-notes').value = '';
     document.getElementById('f-currency-sym').textContent = '€';
     itemRows = [];
   } else {
@@ -444,7 +442,7 @@ async function saveInvoice() {
     counterparty_id: cpId,
     template_id: tmplId,
     my_company_id: mcId,
-    notes: document.getElementById('f-notes').value || null,
+    notes: null,
     items: itemRows.map(r => ({ description: r.description, unit: r.unit || 'Hours', rate: r.rate })),
   };
 

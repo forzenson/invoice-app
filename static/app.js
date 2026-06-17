@@ -279,7 +279,7 @@ async function loadCpSelect() {
     const cur = sel.value;
     sel.innerHTML = '<option value=""></option>' + cps.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     if (cur) sel.value = cur;
-  } catch {}
+  } catch (e) { toast('Clients load failed: ' + e.message, 'error'); }
 }
 
 async function loadTmplSelect() {
@@ -287,10 +287,10 @@ async function loadTmplSelect() {
     const tmpls = await api('GET', '/templates/');
     const sel = document.getElementById('f-template');
     const cur = sel.value;
-    sel.innerHTML = '<option value="">— template —</option>' + tmpls.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+    sel.innerHTML = '<option value=""></option>' + tmpls.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
     if (cur) sel.value = cur;
     else if (tmpls.length) sel.value = tmpls[0].id;
-  } catch {}
+  } catch (e) { toast('Templates load failed: ' + e.message, 'error'); }
 }
 
 async function loadMcSelect() {
@@ -300,7 +300,7 @@ async function loadMcSelect() {
     const cur = sel.value;
     sel.innerHTML = '<option value=""></option>' + mcs.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     if (cur) sel.value = cur;
-  } catch {}
+  } catch (e) { toast('Companies load failed: ' + e.message, 'error'); }
 }
 
 function rateForCompany(serviceItem, mcId) {

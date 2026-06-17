@@ -4,8 +4,13 @@ from datetime import date as date_type
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.orm import Session
+
+from database import get_db
+from models import Invoice, InvoiceItem, InvoiceTemplate, Counterparty, InvoiceStatus, MyCompany
+from schemas import InvoiceCreate, InvoiceUpdate, InvoiceOut, InvoiceListItem
+from time_distributor import distribute_time
 
 
 def _safe_filename_part(s: str | None) -> str:
@@ -18,10 +23,46 @@ def _safe_filename_part(s: str | None) -> str:
     s = re.sub(r"\s+", " ", s).strip().rstrip(".")
     return s
 
-from database import get_db
-from models import Invoice, InvoiceItem, InvoiceTemplate, Counterparty, InvoiceStatus, MyCompany
-from schemas import InvoiceCreate, InvoiceUpdate, InvoiceOut, InvoiceListItem
-from time_distributor import distribute_time
+
+def _build_pdf_context(inv: "Invoice") -> tuple[dict, str]:
+    """Собирает (context, template_file) для рендера инвойса в PDF.
+    Вынесено отдельно, чтобы GET /pdf и POST /generate-pdf не дублировали логику."""
+    template_file = inv.template.filename if inv.template else "invoice_default.html"
+    cp = inv.counterparty
+    mc = inv.my_company
+    context = {
+        "invoice_number": inv.number,
+        "invoice_date": inv.date.strftime("%B %d, %Y"),
+        "due_date": inv.due_date.strftime("%B %d, %Y") if inv.due_date else None,
+        "currency": inv.currency,
+        "total_amount": inv.total_amount,
+        "notes": inv.notes or "",
+        "company_name": mc.name if mc else "Insha s.r.o.",
+        "company_address": mc.address if mc else "Novozamocka 353, 951 12 Ivanka pri Nitre",
+        "company_country": mc.country if mc else "Slovak Republic",
+        "company_number": mc.company_number if mc else "5482834",
+        "company_swift": mc.swift if mc else "TRWIBEB1XXX",
+        "company_iban": mc.iban if mc else "BE21 9679 1901 0803",
+        "company_vat": mc.vat if mc else "SK2121797700",
+        "cp_name": cp.name if cp else "",
+        "cp_address": cp.address or "",
+        "cp_old_address": cp.old_address or "",
+        "cp_company_number": cp.company_number or "",
+        "cp_eu_vat": cp.eu_vat or "",
+        "items": [{"description": i.description, "unit": i.unit, "rate": i.rate,
+                   "time_formatted": i.time_formatted, "amount": i.amount} for i in inv.items],
+    }
+    return context, template_file
+
+
+def _invoice_pdf_filename(inv: "Invoice") -> str:
+    """МояКомпания_Контрагент_Номер.pdf"""
+    parts = [
+        _safe_filename_part(inv.my_company.name if inv.my_company else None),
+        _safe_filename_part(inv.counterparty.name if inv.counterparty else None),
+        _safe_filename_part(inv.number),
+    ]
+    return "_".join(p for p in parts if p) + ".pdf"
 
 router = APIRouter(prefix="/invoices", tags=["invoices"])
 
@@ -139,70 +180,63 @@ def duplicate_invoice(inv_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/{inv_id}/pdf")
-def download_pdf(inv_id: int, db: Session = Depends(get_db)):
-    inv = db.query(Invoice).get(inv_id)
-    if not inv:
-        raise HTTPException(404, "Invoice not found")
-    if not inv.pdf_path or not os.path.exists(inv.pdf_path):
-        raise HTTPException(404, "PDF not generated yet")
-
-    # Имя файла: МояКомпания_Контрагент_Номер.pdf
-    parts = [
-        _safe_filename_part(inv.my_company.name if inv.my_company else None),
-        _safe_filename_part(inv.counterparty.name if inv.counterparty else None),
-        _safe_filename_part(inv.number),
-    ]
-    filename = "_".join(p for p in parts if p) + ".pdf"
-    return FileResponse(inv.pdf_path, media_type="application/pdf", filename=filename)
-
-
-@router.post("/{inv_id}/generate-pdf", response_model=dict)
-async def generate_pdf(inv_id: int, db: Session = Depends(get_db)):
+async def download_pdf(inv_id: int, db: Session = Depends(get_db)):
+    """Всегда рендерим PDF из текущего состояния инвойса в БД и стримим в ответ.
+    Не читаем закешированный файл с диска — это был источник бага:
+    при изменении номера/повторном использовании номера старые файлы перетирались
+    и/или браузер кешировал PDF по URL, поэтому скачивался не тот инвойс.
+    Cache-Control: no-store гарантирует, что браузер тоже не закеширует ответ."""
     inv = db.query(Invoice).get(inv_id)
     if not inv:
         raise HTTPException(404, "Invoice not found")
 
-    template_file = inv.template.filename if inv.template else "invoice_default.html"
-    # Резолв пути к шаблону живёт внутри pdf_generator.generate_invoice_pdf
-
-    cp = inv.counterparty
-    mc = inv.my_company
-
-    context = {
-        "invoice_number": inv.number,
-        "invoice_date": inv.date.strftime("%B %d, %Y"),
-        "due_date": inv.due_date.strftime("%B %d, %Y") if inv.due_date else None,
-        "currency": inv.currency,
-        "total_amount": inv.total_amount,
-        "notes": inv.notes or "",
-        "company_name": mc.name if mc else "Insha s.r.o.",
-        "company_address": mc.address if mc else "Novozamocka 353, 951 12 Ivanka pri Nitre",
-        "company_country": mc.country if mc else "Slovak Republic",
-        "company_number": mc.company_number if mc else "5482834",
-        "company_swift": mc.swift if mc else "TRWIBEB1XXX",
-        "company_iban": mc.iban if mc else "BE21 9679 1901 0803",
-        "company_vat": mc.vat if mc else "SK2121797700",
-        "cp_name": cp.name if cp else "",
-        "cp_address": cp.address or "",
-        "cp_old_address": cp.old_address or "",
-        "cp_company_number": cp.company_number or "",
-        "cp_eu_vat": cp.eu_vat or "",
-        "items": [{"description": i.description, "unit": i.unit, "rate": i.rate,
-                   "time_formatted": i.time_formatted, "amount": i.amount} for i in inv.items],
-    }
-
-    pdf_path = PDF_DIR / f"{inv.number}.pdf"
+    context, template_file = _build_pdf_context(inv)
 
     from pdf_generator import generate_invoice_pdf
-
     try:
         pdf_bytes = await generate_invoice_pdf(context, template_file)
     except FileNotFoundError as e:
         raise HTTPException(500, str(e))
     except Exception as e:
         import traceback
-        # Возвращаем полный traceback в теле ответа — приватная утилита, не прод.
         raise HTTPException(500, f"PDF generation failed: {type(e).__name__}: {e}\n\n{traceback.format_exc()}")
+
+    filename = _invoice_pdf_filename(inv)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'inline; filename="{filename}"',
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        },
+    )
+
+
+@router.post("/{inv_id}/generate-pdf", response_model=dict)
+async def generate_pdf(inv_id: int, db: Session = Depends(get_db)):
+    """Эндпоинт оставлен для обратной совместимости с фронтом, но кеш-файл
+    больше не используется при отдаче. Главное side-effect — перевод
+    статуса draft → sent и инкремент usage_count шаблона."""
+    inv = db.query(Invoice).get(inv_id)
+    if not inv:
+        raise HTTPException(404, "Invoice not found")
+
+    context, template_file = _build_pdf_context(inv)
+
+    # Используем id, чтобы файлы НИКОГДА не сталкивались
+    # (раньше ключом был inv.number, и при смене номера или его повторном
+    # использовании файлы перезатирались).
+    pdf_path = PDF_DIR / f"{inv.id}_{_safe_filename_part(inv.number) or 'inv'}.pdf"
+
+    from pdf_generator import generate_invoice_pdf
+    try:
+        pdf_bytes = await generate_invoice_pdf(context, template_file)
+    except FileNotFoundError as e:
+        raise HTTPException(500, str(e))
+    except Exception as e:
+        import traceback
+        raise HTTPException(500, f"PDF generation failed: {type(e).__name__}: {e}\n\n{traceback.format_exc()}")
+
     with open(str(pdf_path), "wb") as f:
         f.write(pdf_bytes)
 

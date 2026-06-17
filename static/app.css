@@ -152,8 +152,9 @@ input::placeholder, textarea::placeholder { color: var(--placeholder); }
 .time-preview { font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); padding: 0 6px; font-variant-numeric: tabular-nums; }
 .amount-preview { font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
 .items-add-row { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
-.add-item-btn { display: inline-flex; align-items: center; gap: 7px; font-family: var(--font); font-size: 14px; font-weight: 500; color: var(--accent); background: var(--input-bg); border: none; cursor: pointer; padding: 12px 16px; border-radius: var(--radius-input); height: 44px; transition: background 0.12s, box-shadow 0.15s; letter-spacing: -0.1px; }
+.add-item-btn { display: inline-flex; align-items: center; gap: 7px; font-family: var(--font); font-size: 14px; font-weight: 500; color: var(--accent); background: var(--input-bg); border: none; cursor: pointer; padding: 12px 14px; border-radius: var(--radius-input); height: 44px; min-width: 220px; transition: background 0.12s, box-shadow 0.15s; letter-spacing: -0.1px; outline: none; }
 .add-item-btn:hover { background: #EAEAEC; color: var(--accent-hover); }
+.add-item-btn:focus { box-shadow: var(--accent-ring); }
 .add-item-btn i { font-size: 16px; }
 .items-add-select {
   font-family: var(--font); font-size: 14px; font-weight: 500;

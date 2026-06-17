@@ -201,7 +201,6 @@ async function editInvoice(id) {
     document.getElementById('f-counterparty').value = inv.counterparty_id;
     document.getElementById('f-template').value = inv.template_id;
     document.getElementById('f-my-company').value = inv.my_company_id || '';
-    document.getElementById('f-currency-sym').textContent = CURRENCY_SYMBOLS[inv.currency] || '€';
     itemRows = inv.items.map(i => ({ description: i.description, unit: i.unit, rate: i.rate }));
     renderItemRows();
     recalcPreview();
@@ -219,7 +218,6 @@ async function initNewInvoiceForm() {
     document.getElementById('f-due-date').value = '';
     document.getElementById('f-currency').value = 'EUR';
     document.getElementById('f-total').value = '';
-    document.getElementById('f-currency-sym').textContent = '€';
     itemRows = [];
   } else {
     // В режиме редактирования номер не трогаем — он уже сохранён, и автогенерацию не включаем.
@@ -330,7 +328,6 @@ async function loadServiceSelect() {
 }
 
 document.getElementById('f-currency').addEventListener('change', function() {
-  document.getElementById('f-currency-sym').textContent = CURRENCY_SYMBOLS[this.value] || this.value;
   recalcPreview();
 });
 

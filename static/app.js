@@ -45,38 +45,33 @@ async function api(method, path, body) {
 }
 
 // ── INVOICES ──
+function _populateFilterSelect(id, values, allLabel = 'Все') {
+  const sel = document.getElementById(id);
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = `<option value="">${allLabel}</option>` +
+    values.map(v => `<option value="${v}">${v}</option>`).join('');
+  if (cur) sel.value = cur;
+}
+
 async function loadInvoices() {
   try {
     allInvoices = await api('GET', '/invoices/');
-    renderStats();
-    // Заполняем фильтр контрагентов
-    const sel = document.getElementById('filter-cp');
-    if (sel) {
-      const cur = sel.value;
-      const cps = [...new Set(allInvoices.map(i => i.counterparty_name))].sort();
-      sel.innerHTML = '<option value="">Все контрагенты</option>' +
-        cps.map(n => `<option value="${n}">${n}</option>`).join('');
-      if (cur) sel.value = cur;
-    }
+    const cps = [...new Set(allInvoices.map(i => i.counterparty_name).filter(Boolean))].sort();
+    const mcs = [...new Set(allInvoices.map(i => i.my_company_name).filter(Boolean))].sort();
+    _populateFilterSelect('filter-cp', cps);
+    _populateFilterSelect('filter-mc', mcs);
     renderInvoices();
   } catch (e) { toast(e.message, 'error'); }
 }
 
 function clearFilters() {
   document.getElementById('search-input').value = '';
-  if (document.getElementById('filter-cp')) document.getElementById('filter-cp').value = '';
-  if (document.getElementById('filter-date-from')) document.getElementById('filter-date-from').value = '';
-  if (document.getElementById('filter-date-to')) document.getElementById('filter-date-to').value = '';
+  ['filter-cp', 'filter-mc', 'filter-date-from', 'filter-date-to'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
   renderInvoices();
-}
-
-function renderStats() {
-  const pending = allInvoices.filter(i => i.status === 'sent');
-  const paid = allInvoices.filter(i => i.status === 'paid');
-  document.getElementById('stat-total').textContent = allInvoices.length;
-  const sym = arr => arr.length ? (CURRENCY_SYMBOLS[arr[0].currency] || '€') + ' ' + arr.reduce((s, i) => s + i.total_amount, 0).toLocaleString('de-DE', {maximumFractionDigits: 0}) : '—';
-  document.getElementById('stat-pending').textContent = sym(pending);
-  document.getElementById('stat-paid').textContent = sym(paid);
 }
 
 let sortField = 'date', sortDir = -1;
@@ -95,15 +90,17 @@ function renderInvoices() {
   const q = (document.getElementById('search-input').value || '').toLowerCase();
   const tbody = document.getElementById('invoices-body');
   const cpFilter = document.getElementById('filter-cp')?.value || '';
+  const mcFilter = document.getElementById('filter-mc')?.value || '';
   const dateFrom = document.getElementById('filter-date-from')?.value || '';
   const dateTo   = document.getElementById('filter-date-to')?.value || '';
 
   let list = allInvoices.filter(inv => {
     const matchSearch = !q || inv.number.toLowerCase().includes(q) || inv.counterparty_name.toLowerCase().includes(q);
     const matchCp     = !cpFilter || inv.counterparty_name === cpFilter;
+    const matchMc     = !mcFilter || inv.my_company_name === mcFilter;
     const matchFrom   = !dateFrom || inv.date >= dateFrom;
     const matchTo     = !dateTo   || inv.date <= dateTo;
-    return matchSearch && matchCp && matchFrom && matchTo;
+    return matchSearch && matchCp && matchMc && matchFrom && matchTo;
   });
   list = list.sort((a, b) => {
     let va = a[sortField], vb = b[sortField];

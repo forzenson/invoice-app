@@ -89,6 +89,7 @@ def list_invoices(status: InvoiceStatus | None = None, counterparty_id: int | No
         total_amount=inv.total_amount, currency=inv.currency,
         status=inv.status,
         counterparty_name=inv.counterparty.name if inv.counterparty else "—",
+        my_company_name=inv.my_company.name if inv.my_company else None,
     ) for inv in q.all()]
 
 

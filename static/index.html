@@ -48,13 +48,26 @@
         <button class="btn btn-primary" onclick="goTo('new-invoice')"><i class="ti ti-plus"></i> Новый инвойс</button>
       </div>
       <div class="content">
-        <div class="stats-row" id="stats-row">
-          <div class="stat-card"><div class="stat-label">Всего</div><div class="stat-value" id="stat-total">—</div></div>
-          <div class="stat-card"><div class="stat-label">Ожидают оплаты</div><div class="stat-value" id="stat-pending">—</div></div>
-          <div class="stat-card"><div class="stat-label">Оплачено</div><div class="stat-value" id="stat-paid">—</div></div>
+        <div class="filters-row">
+          <div class="filter-fg">
+            <label>Контрагент</label>
+            <select id="filter-cp" onchange="renderInvoices()"><option value="">Все</option></select>
+          </div>
+          <div class="filter-fg">
+            <label>Моя компания</label>
+            <select id="filter-mc" onchange="renderInvoices()"><option value="">Все</option></select>
+          </div>
+          <div class="filter-fg">
+            <label>Дата с</label>
+            <input type="date" id="filter-date-from" onchange="renderInvoices()">
+          </div>
+          <div class="filter-fg">
+            <label>Дата по</label>
+            <input type="date" id="filter-date-to" onchange="renderInvoices()">
+          </div>
         </div>
         <div class="table-header">
-          <input class="search-input" type="text" placeholder="Поиск…" id="search-input" oninput="filterInvoices()">
+          <input class="search-input" type="text" placeholder="Поиск…" id="search-input" oninput="renderInvoices()">
 
         </div>
         <table class="data-table">

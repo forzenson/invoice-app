@@ -141,6 +141,7 @@ class InvoiceListItem(BaseModel):
     currency: str
     status: InvoiceStatus
     counterparty_name: str
+    my_company_name: Optional[str] = None
     model_config = {"from_attributes": True}
 
 

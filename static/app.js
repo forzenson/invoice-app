@@ -54,8 +54,22 @@ function _populateFilterSelect(id, values, allLabel = 'All') {
   if (cur) sel.value = cur;
 }
 
+function _ensureDefaultDateFilters() {
+  // По умолчанию диапазон = с 1 января текущего года по сегодня.
+  // Заодно избавляет от плейсхолдера "дд.мм.рррр" в дате с локализованным браузером.
+  const today = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const fromDefault = `${today.getFullYear()}-01-01`;
+  const toDefault = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+  const from = document.getElementById('filter-date-from');
+  const to = document.getElementById('filter-date-to');
+  if (from && !from.value) from.value = fromDefault;
+  if (to && !to.value) to.value = toDefault;
+}
+
 async function loadInvoices() {
   try {
+    _ensureDefaultDateFilters();
     allInvoices = await api('GET', '/invoices/');
     const cps = [...new Set(allInvoices.map(i => i.counterparty_name).filter(Boolean))].sort();
     const mcs = [...new Set(allInvoices.map(i => i.my_company_name).filter(Boolean))].sort();

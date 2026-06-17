@@ -74,13 +74,13 @@ input::placeholder, textarea::placeholder { color: var(--placeholder); }
 
 .filters-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 22px; }
 .filter-fg { display: flex; flex-direction: column; gap: 6px; }
-.filter-fg label { font-size: 11px; font-weight: 600; color: var(--text-hint); text-transform: uppercase; letter-spacing: 0.5px; }
+.filter-fg label { font-size: 11px; font-weight: 600; color: var(--text-hint); text-transform: uppercase; letter-spacing: 0.5px; padding-left: 12px; }
 .filter-fg select, .filter-fg input { width: 100%; }
 .stat-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
 .stat-value { font-size: 26px; font-weight: 600; font-family: var(--font-mono); letter-spacing: -0.4px; }
 
 .table-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 16px; flex-wrap: wrap; }
-.search-input { padding: 0 14px; height: 38px; border: none; border-radius: var(--radius-input); font-family: var(--font); font-size: 14px; background: var(--input-bg); color: var(--text); width: 280px; outline: none; transition: box-shadow 0.15s; }
+.search-input { padding: 0 14px; height: 38px; border: none; border-radius: var(--radius-input); font-family: var(--font); font-size: 14px; background: var(--input-bg); color: var(--text); width: 100%; max-width: 460px; outline: none; transition: box-shadow 0.15s; }
 .search-input:focus { box-shadow: var(--accent-ring); }
 .filter-tabs { display: flex; gap: 4px; }
 .filter-tab { padding: 6px 14px; border-radius: var(--radius-pill); border: 1px solid var(--border-strong); background: var(--surface); font-family: var(--font); font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: all 0.1s; }
@@ -104,7 +104,7 @@ input::placeholder, textarea::placeholder { color: var(--placeholder); }
 .btn-pdf, .btn-edit, .btn-copy, .btn-delete { display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; height: 30px; border-radius: var(--radius-btn); font-size: 13px; font-weight: 500; border: none; cursor: pointer; font-family: var(--font); transition: filter 0.15s, transform 0.1s; white-space: nowrap; letter-spacing: -0.1px; }
 .btn-pdf:hover, .btn-edit:hover, .btn-copy:hover, .btn-delete:hover { filter: brightness(1.05); transform: translateY(-1px); }
 .btn-pdf i, .btn-edit i, .btn-copy i, .btn-delete i { font-size: 14px; }
-.btn-pdf    { background: var(--accent); color: #fff; }
+.btn-pdf    { background: #E3F0FF; color: #0064CC; }
 .btn-edit   { background: #FFF1E0; color: #C77700; }
 .btn-copy   { background: #EEEAFF; color: #6E5AC8; }
 .btn-delete { background: #FFE8E8; color: #C72B2B; }
@@ -191,4 +191,12 @@ input::placeholder, textarea::placeholder { color: var(--placeholder); }
 .empty-state p { font-size: 14px; font-weight: 500; }
 
 select[id^="filter"], input[id^="filter"] { padding: 10px 12px; border: none; border-radius: var(--radius-input); font-size: 14px; font-weight: 500; font-family: var(--font); background: var(--input-bg); color: var(--text); outline: none; transition: box-shadow 0.15s; }
+select[id^="filter"] {
+  appearance: none; -webkit-appearance: none; -moz-appearance: none;
+  padding-right: 36px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='none' stroke='%236E6E73' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' d='M1 1.5 6 6.5 11 1.5'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px 8px;
+}
 select[id^="filter"]:focus, input[id^="filter"]:focus { box-shadow: var(--accent-ring); }

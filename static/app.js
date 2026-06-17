@@ -480,7 +480,7 @@ async function loadCounterparties() {
       <div class="cp-card">
         <div class="cp-name">${cp.name}</div>
         <div class="cp-detail">
-          ${cp.company_number ? `ICO: ${cp.company_number}<br>` : ''}
+          ${cp.company_number ? `Registration number: ${cp.company_number}<br>` : ''}
           ${cp.eu_vat ? `EU VAT: ${cp.eu_vat}<br>` : ''}
           ${cp.iban ? `IBAN: ${cp.iban}` : ''}
         </div>

@@ -120,7 +120,7 @@ input::placeholder, textarea::placeholder { color: var(--placeholder); }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px 26px; margin-bottom: 18px; box-shadow: var(--shadow-subtle); }
-.form-card-title { font-size: 13px; font-weight: 600; color: var(--text-hint); margin-bottom: 18px; text-transform: uppercase; letter-spacing: 0.5px; }
+.form-card-title { font-size: 13px; font-weight: 600; color: var(--text-hint); margin-bottom: 18px; text-transform: uppercase; letter-spacing: 0.5px; padding-left: 12px; }
 .form-grid { display: grid; gap: 14px; }
 .two-col { grid-template-columns: 1fr 1fr; }
 .fg { display: flex; flex-direction: column; gap: 7px; }
@@ -137,8 +137,7 @@ input::placeholder, textarea::placeholder { color: var(--placeholder); }
 .fg input:focus, .fg select:focus, .fg textarea:focus { box-shadow: var(--accent-ring); }
 .fg textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
 
-.total-input-row { display: flex; align-items: center; gap: 10px; max-width: 400px; }
-.currency-sym { font-size: 16px; font-weight: 500; color: var(--text-muted); font-family: var(--font); padding-left: 4px; }
+.total-input-row { display: flex; align-items: center; max-width: 400px; }
 .total-input { padding: 12px 14px !important; border: none !important; border-radius: var(--radius-input) !important; font-family: var(--font) !important; font-size: 14px !important; font-weight: 500 !important; color: var(--text) !important; background: var(--input-bg) !important; width: 100% !important; letter-spacing: -0.1px; outline: none !important; transition: box-shadow 0.15s; }
 .total-input:focus { box-shadow: var(--accent-ring) !important; }
 .hint { font-size: 12px; color: var(--text-hint); }
@@ -152,8 +151,9 @@ input::placeholder, textarea::placeholder { color: var(--placeholder); }
 .time-preview { font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); padding: 0 6px; font-variant-numeric: tabular-nums; }
 .amount-preview { font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
 .items-add-row { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
-.add-item-btn { display: inline-flex; align-items: center; gap: 7px; font-family: var(--font); font-size: 14px; font-weight: 500; color: var(--accent); background: var(--input-bg); border: none; cursor: pointer; padding: 12px 16px; border-radius: var(--radius-input); height: 44px; transition: background 0.12s, box-shadow 0.15s; letter-spacing: -0.1px; }
+.add-item-btn { display: inline-flex; align-items: center; gap: 7px; font-family: var(--font); font-size: 14px; font-weight: 500; color: var(--accent); background: var(--input-bg); border: none; cursor: pointer; padding: 12px 14px; border-radius: var(--radius-input); height: 44px; min-width: 220px; transition: background 0.12s, box-shadow 0.15s; letter-spacing: -0.1px; outline: none; }
 .add-item-btn:hover { background: #EAEAEC; color: var(--accent-hover); }
+.add-item-btn:focus { box-shadow: var(--accent-ring); }
 .add-item-btn i { font-size: 16px; }
 .items-add-select {
   font-family: var(--font); font-size: 14px; font-weight: 500;

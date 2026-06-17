@@ -109,7 +109,6 @@
         <div class="form-card">
           <div class="form-card-title">Total amount</div>
           <div class="total-input-row">
-            <span class="currency-sym" id="f-currency-sym">€</span>
             <input type="number" id="f-total" class="total-input" min="0" step="0.01" placeholder="0.00" oninput="recalcPreview()">
           </div>
         </div>
@@ -120,9 +119,9 @@
             <tbody id="items-body"></tbody>
           </table>
           <div class="items-add-row">
-            <button class="add-item-btn" onclick="addItemRow()"><i class="ti ti-plus"></i> Add item</button>
+            <button class="add-item-btn" onclick="addItemRow()"><i class="ti ti-plus"></i> Add new item</button>
             <select id="service-item-select" class="items-add-select">
-              <option value="">+ from library</option>
+              <option value="">+ Add items</option>
             </select>
           </div>
           <div class="items-totals" id="items-totals"></div>

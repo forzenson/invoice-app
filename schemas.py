@@ -16,6 +16,8 @@ class MyCompanyBase(BaseModel):
     iban: Optional[str] = None
     swift: Optional[str] = None
     vat: Optional[str] = None
+    account_number: Optional[str] = None
+    routing_number: Optional[str] = None
     notes: Optional[str] = None
 
 class MyCompanyCreate(MyCompanyBase):

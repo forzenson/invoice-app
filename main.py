@@ -11,6 +11,30 @@ from routers import my_company, service_items
 
 Base.metadata.create_all(bind=engine)
 
+
+def _ensure_columns(table: str, columns: dict[str, str]) -> None:
+    """Лёгкая миграция без Alembic: для каждой колонки из columns
+    делаем ALTER TABLE ADD COLUMN, если её ещё нет.
+    create_all НЕ добавляет колонки в существующие таблицы — поэтому ходим сами."""
+    from sqlalchemy import inspect, text
+    insp = inspect(engine)
+    if table not in insp.get_table_names():
+        return  # create_all сам создаст с актуальной схемой
+    existing = {c["name"] for c in insp.get_columns(table)}
+    to_add = {name: type_ for name, type_ in columns.items() if name not in existing}
+    if not to_add:
+        return
+    with engine.begin() as conn:
+        for name, type_ in to_add.items():
+            conn.execute(text(f'ALTER TABLE {table} ADD COLUMN {name} {type_}'))
+
+
+# Новые поля у MyCompany — на проде my_companies уже существует с прошлым набором.
+_ensure_columns("my_companies", {
+    "account_number": "VARCHAR",
+    "routing_number": "VARCHAR",
+})
+
 # builtin_templates — канонические шаблоны из репозитория, обновляются каждым деплоем.
 # TEMPLATES_DIR    — volume или локальная папка, куда пользователь может загружать
 #                    свои шаблоны с УНИКАЛЬНЫМИ именами (не пересекающимися с builtin).

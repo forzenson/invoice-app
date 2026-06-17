@@ -573,7 +573,7 @@ async function loadMyCompanies() {
 async function openMcModal(id) {
   editingMcId = id || null;
   document.getElementById('mc-modal-title').textContent = id ? 'Редактировать компанию' : 'Новая компания';
-  ['id','name','address','country','company-number','iban','swift','vat'].forEach(f => {
+  ['id','name','address','country','company-number','iban','swift','vat','account-number','routing-number'].forEach(f => {
     const el = document.getElementById('mc-' + f); if (el) el.value = '';
   });
   if (id) {
@@ -593,6 +593,8 @@ async function openMcModal(id) {
         document.getElementById('mc-iban').value = mc.iban || '';
         document.getElementById('mc-swift').value = mc.swift || '';
         document.getElementById('mc-vat').value = mc.vat || '';
+        document.getElementById('mc-account-number').value = mc.account_number || '';
+        document.getElementById('mc-routing-number').value = mc.routing_number || '';
       }
     } catch (e) { toast(e.message, 'error'); return; }
   }
@@ -612,6 +614,8 @@ async function saveMc() {
     iban: document.getElementById('mc-iban').value || null,
     swift: document.getElementById('mc-swift').value || null,
     vat: document.getElementById('mc-vat').value || null,
+    account_number: document.getElementById('mc-account-number').value || null,
+    routing_number: document.getElementById('mc-routing-number').value || null,
   };
   try {
     if (editingMcId) await api('PUT', `/my-companies/${editingMcId}`, payload);

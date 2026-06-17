@@ -22,6 +22,8 @@ class MyCompany(Base):
     iban = Column(String)
     swift = Column(String)
     vat = Column(String)
+    account_number = Column(String)
+    routing_number = Column(String)
     notes = Column(Text)
 
     invoices = relationship("Invoice", back_populates="my_company")

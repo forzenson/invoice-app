@@ -44,6 +44,8 @@ def _build_pdf_context(inv: "Invoice") -> tuple[dict, str]:
         "company_swift": mc.swift if mc else "TRWIBEB1XXX",
         "company_iban": mc.iban if mc else "BE21 9679 1901 0803",
         "company_vat": mc.vat if mc else "SK2121797700",
+        "company_account_number": mc.account_number if mc else "",
+        "company_routing_number": mc.routing_number if mc else "",
         "cp_name": cp.name if cp else "",
         "cp_address": cp.address or "",
         "cp_old_address": cp.old_address or "",

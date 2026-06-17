@@ -137,7 +137,7 @@ input::placeholder, textarea::placeholder { color: var(--placeholder); }
 .fg input:focus, .fg select:focus, .fg textarea:focus { box-shadow: var(--accent-ring); }
 .fg textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
 
-.total-input-row { display: flex; align-items: center; gap: 10px; max-width: 400px; }
+.total-input-row { display: flex; align-items: center; gap: 10px; max-width: 220px; }
 .currency-sym { font-size: 16px; font-weight: 500; color: var(--text-muted); font-family: var(--font); padding-left: 4px; }
 .total-input { padding: 12px 14px !important; border: none !important; border-radius: var(--radius-input) !important; font-family: var(--font) !important; font-size: 14px !important; font-weight: 500 !important; color: var(--text) !important; background: var(--input-bg) !important; width: 100% !important; letter-spacing: -0.1px; outline: none !important; transition: box-shadow 0.15s; }
 .total-input:focus { box-shadow: var(--accent-ring) !important; }

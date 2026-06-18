@@ -181,7 +181,41 @@ async function generateAndDownload(id, number) {
   try {
     toast('Generating PDF…');
     await api('POST', `/invoices/${id}/generate-pdf`);
-    window.open(`${API}/invoices/${id}/pdf`, '_blank');
+
+    const pdfUrl = `${API}/invoices/${id}/pdf`;
+    // На iOS PWA window.open открывает PDF без браузерной шапки, share-кнопки нет.
+    // Web Share API вызывает нативный share sheet — оттуда можно отправить в любой мессенджер.
+    let shared = false;
+    try {
+      const res = await fetch(pdfUrl);
+      const blob = await res.blob();
+      const filename = `${number}.pdf`;
+      const file = new File([blob], filename, { type: 'application/pdf' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: filename });
+        shared = true;
+      } else {
+        // Десктоп / без поддержки share — триггерим скачивание
+        const objUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = objUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(objUrl), 1000);
+        shared = true;
+      }
+    } catch (shareErr) {
+      // AbortError = пользователь сам закрыл share sheet — это норма, не ошибка
+      if (shareErr && shareErr.name === 'AbortError') {
+        shared = true;
+      }
+    }
+
+    // Если ничего не сработало — старый фоллбэк через новую вкладку
+    if (!shared) window.open(pdfUrl, '_blank');
+
     toast('PDF ready', 'success');
     loadInvoices();
   } catch (e) { toast(e.message, 'error'); }

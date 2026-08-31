@@ -18,7 +18,9 @@ def distribute_time(total_amount: float, items: list[InvoiceItemInput]) -> list[
         item = items[0]
         minutes = round(total_amount / item.rate * 60)
         minutes = max(minutes, 1)
-        amount = round(minutes / 60 * item.rate, 2)
+        # amount = ровно то, что ввёл пользователь. Иначе обратный пересчёт
+        # (minutes/60*rate) даёт другую сумму, и позиция не сходится с Total.
+        amount = round(total_amount, 2)
         return [{
             "description": item.description,
             "unit": item.unit,

@@ -82,6 +82,13 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Content-Security-Policy"] = (
             "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;"
         )
+        # Не даём браузеру кешировать HTML/JS/CSS/JSON — иначе после деплоя
+        # пользователь продолжает видеть старый app.js и правки "не работают".
+        path = request.url.path
+        if path == "/" or any(path.endswith(ext) for ext in (".html", ".js", ".css", ".json")):
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
         return response
 
 app.add_middleware(SecurityHeadersMiddleware)

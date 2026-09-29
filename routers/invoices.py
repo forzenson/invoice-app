@@ -209,7 +209,7 @@ async def download_pdf(inv_id: int, db: Session = Depends(get_db)):
         content=pdf_bytes,
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f'inline; filename="{filename}"',
+            "Content-Disposition": f'attachment; filename="{filename}"',
             "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
         },
     )

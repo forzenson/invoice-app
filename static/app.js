@@ -177,14 +177,13 @@ async function duplicateInvoice(id) {
   catch (e) { toast(e.message, 'error'); }
 }
 
-// Мобильные / PWA — используем Web Share API (нативный share sheet).
-// На десктопе canShare тоже часто возвращает true, но открывает системный
-// share dialog Windows/macOS вместо привычного скачивания — плохой UX.
-function _isMobileOrPWA() {
-  const standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
-  const iosStandalone = window.navigator.standalone === true;
-  const mobileUA = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  return standalone || iosStandalone || mobileUA;
+// Web Share API используем ТОЛЬКО на реальных мобильных устройствах.
+// Если проверять display-mode: standalone, попадаются Windows/macOS PWA
+// — там canShare возвращает true и открывается кривой системный share
+// dialog вместо скачивания. iOS Safari PWA всё равно содержит 'iPhone'
+// в User Agent, так что mobile UA достаточно для правильного определения.
+function _isMobile() {
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 }
 
 function _downloadBlob(blob, filename) {
@@ -209,7 +208,7 @@ async function generateAndDownload(id, number) {
     const res = await fetch(pdfUrl);
     const blob = await res.blob();
 
-    if (_isMobileOrPWA()) {
+    if (_isMobile()) {
       // На iOS PWA / мобильном — Web Share API. Можно отправить в мессенджер.
       try {
         const file = new File([blob], filename, { type: 'application/pdf' });

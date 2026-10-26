@@ -150,6 +150,7 @@ input::placeholder, textarea::placeholder { color: var(--placeholder); }
 .items-edit-table td input { width: 100%; padding: 9px 12px; border: none; border-radius: 8px; font-family: var(--font); font-size: 14px; color: var(--text); background: var(--input-bg); outline: none; transition: box-shadow 0.15s; }
 .items-edit-table td input:focus { box-shadow: var(--accent-ring); }
 .time-preview { font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); padding: 0 6px; font-variant-numeric: tabular-nums; }
+.fixed-badge { display: inline-block; font-size: 12px; font-weight: 600; color: var(--text-muted); background: var(--input-bg); border-radius: 6px; padding: 4px 10px; letter-spacing: 0.3px; }
 .amount-preview { font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
 .items-add-row { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
 .add-item-btn { display: inline-flex; align-items: center; gap: 7px; font-family: var(--font); font-size: 14px; font-weight: 500; color: var(--text); background: var(--input-bg); border: none; cursor: pointer; padding: 12px 14px; border-radius: var(--radius-input); height: 44px; min-width: 220px; transition: background 0.12s, box-shadow 0.15s; letter-spacing: -0.1px; outline: none; }

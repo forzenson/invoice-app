@@ -35,6 +35,11 @@ _ensure_columns("my_companies", {
     "routing_number": "VARCHAR",
 })
 
+# Фиксированная цена позиции (услуга без часов).
+_ensure_columns("invoice_items", {
+    "is_fixed": "BOOLEAN DEFAULT FALSE",
+})
+
 # builtin_templates — канонические шаблоны из репозитория, обновляются каждым деплоем.
 # TEMPLATES_DIR    — volume или локальная папка, куда пользователь может загружать
 #                    свои шаблоны с УНИКАЛЬНЫМИ именами (не пересекающимися с builtin).

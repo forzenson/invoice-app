@@ -247,7 +247,13 @@ async function editInvoice(id) {
     document.getElementById('f-counterparty').value = inv.counterparty_id;
     document.getElementById('f-template').value = inv.template_id;
     document.getElementById('f-my-company').value = inv.my_company_id || '';
-    itemRows = inv.items.map(i => ({ description: i.description, unit: i.unit, rate: i.rate }));
+    itemRows = inv.items.map(i => ({
+      description: i.description,
+      unit: i.unit,
+      rate: i.rate,
+      is_fixed: !!i.is_fixed,
+      amount: i.is_fixed ? i.amount : undefined,
+    }));
     renderItemRows();
     recalcPreview();
     goTo('new-invoice');
@@ -419,7 +425,13 @@ document.getElementById('service-item-select').addEventListener('change', functi
 });
 
 function addItemRow() {
-  itemRows.push({ description: '', unit: 'Hours', rate: 100 });
+  itemRows.push({ description: '', unit: 'Hours', rate: 100, is_fixed: false });
+  renderItemRows();
+  recalcPreview();
+}
+
+function addFixedItemRow() {
+  itemRows.push({ description: '', unit: 'Fixed', rate: 0, is_fixed: true, amount: 0 });
   renderItemRows();
   recalcPreview();
 }
@@ -432,14 +444,26 @@ function removeItemRow(i) {
 
 function renderItemRows() {
   const tbody = document.getElementById('items-body');
-  tbody.innerHTML = itemRows.map((row, i) => `
-    <tr>
-      <td><input value="${row.description}" placeholder="Description" onchange="itemRows[${i}].description=this.value"></td>
-      <td><input type="number" value="${row.rate}" min="1" onchange="itemRows[${i}].rate=parseFloat(this.value)||1;recalcPreview()"></td>
-      <td><span class="time-preview" id="tp-${i}">—</span></td>
-      <td><span class="amount-preview" id="ap-${i}">—</span></td>
-      <td><button class="btn btn-sm btn-ghost" onclick="removeItemRow(${i})"><i class="ti ti-trash"></i></button></td>
-    </tr>`).join('');
+  tbody.innerHTML = itemRows.map((row, i) => {
+    if (row.is_fixed) {
+      return `
+        <tr>
+          <td><input value="${row.description}" placeholder="Description" onchange="itemRows[${i}].description=this.value"></td>
+          <td><span class="fixed-badge">Fixed</span></td>
+          <td><span class="time-preview">—</span></td>
+          <td><input type="number" value="${row.amount || 0}" min="0" step="0.01" placeholder="0.00" onchange="itemRows[${i}].amount=parseFloat(this.value)||0;recalcPreview()"></td>
+          <td><button class="btn btn-sm btn-ghost" onclick="removeItemRow(${i})"><i class="ti ti-trash"></i></button></td>
+        </tr>`;
+    }
+    return `
+      <tr>
+        <td><input value="${row.description}" placeholder="Description" onchange="itemRows[${i}].description=this.value"></td>
+        <td><input type="number" value="${row.rate}" min="1" onchange="itemRows[${i}].rate=parseFloat(this.value)||1;recalcPreview()"></td>
+        <td><span class="time-preview" id="tp-${i}">—</span></td>
+        <td><span class="amount-preview" id="ap-${i}">—</span></td>
+        <td><button class="btn btn-sm btn-ghost" onclick="removeItemRow(${i})"><i class="ti ti-trash"></i></button></td>
+      </tr>`;
+  }).join('');
 }
 
 function recalcPreview() {
@@ -449,30 +473,42 @@ function recalcPreview() {
   const totalsEl = document.getElementById('items-totals');
   if (!total || !n) { totalsEl.innerHTML = ''; return; }
 
-  // Случайное распределение для превью
-  const weights = itemRows.map(() => 0.5 + Math.random());
-  const wsum = weights.reduce((a, b) => a + b, 0);
-  let remaining = total;
-  const results = [];
-  itemRows.forEach((row, i) => {
+  // Фиксированные позиции берут свой amount, остаток распределяется между почасовыми.
+  const fixedTotal = itemRows.filter(r => r.is_fixed).reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+  const hourlyRows = itemRows.map((r, i) => ({ r, i })).filter(x => !x.r.is_fixed);
+  const hourlyTotal = Math.max(0, total - fixedTotal);
+  const nh = hourlyRows.length;
+
+  const weights = hourlyRows.map(() => 0.5 + Math.random());
+  const wsum = weights.reduce((a, b) => a + b, 0) || 1;
+  let remaining = hourlyTotal;
+
+  const parts = [];
+  hourlyRows.forEach(({ r, i }, k) => {
     let amount;
-    if (i < n - 1) {
-      amount = Math.round((weights[i] / wsum) * total * 100) / 100;
+    if (k < nh - 1) {
+      amount = Math.round((weights[k] / wsum) * hourlyTotal * 100) / 100;
       remaining -= amount;
     } else {
       amount = Math.round(remaining * 100) / 100;
     }
-    const mins = Math.max(1, Math.round(amount / row.rate * 60));
+    const rate = r.rate || 1;
+    const mins = Math.max(1, Math.round(amount / rate * 60));
     const h = Math.floor(mins / 60);
     const m = mins % 60;
-    results.push({ time: `${h}:${String(m).padStart(2,'0')}`, amount });
     const tp = document.getElementById(`tp-${i}`);
     const ap = document.getElementById(`ap-${i}`);
     if (tp) tp.textContent = `~${h}:${String(m).padStart(2,'0')}`;
     if (ap) ap.textContent = `${sym} ${amount.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    parts.push(`${h}:${String(m).padStart(2,'0')} × ${sym}${r.rate}`);
   });
+  // Фиксированные показываем в хвосте превью строки
+  itemRows.forEach(r => {
+    if (r.is_fixed) parts.push(`${sym}${(parseFloat(r.amount) || 0).toFixed(2)} fixed`);
+  });
+
   totalsEl.innerHTML = `
-    <div class="total-line">${results.map((r, i) => `${r.time} × ${sym}${itemRows[i].rate}`).join(' + ')}</div>
+    <div class="total-line">${parts.join(' + ')}</div>
     <div class="total-grand">${sym} ${total.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>`;
 }
 
@@ -500,7 +536,13 @@ async function saveInvoice() {
     template_id: tmplId,
     my_company_id: mcId,
     notes: null,
-    items: itemRows.map(r => ({ description: r.description, unit: r.unit || 'Hours', rate: r.rate })),
+    items: itemRows.map(r => ({
+      description: r.description,
+      unit: r.unit || (r.is_fixed ? 'Fixed' : 'Hours'),
+      rate: r.is_fixed ? 0 : r.rate,
+      is_fixed: !!r.is_fixed,
+      amount: r.is_fixed ? (parseFloat(r.amount) || 0) : null,
+    })),
   };
 
   try {

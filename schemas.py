@@ -77,6 +77,7 @@ class InvoiceItemBase(BaseModel):
     rate: float
     minutes: int
     amount: float
+    is_fixed: bool = False
 
 class InvoiceItemOut(InvoiceItemBase):
     id: int
@@ -89,7 +90,10 @@ class InvoiceItemOut(InvoiceItemBase):
 class InvoiceItemInput(BaseModel):
     description: str
     unit: str = "Hours"
-    rate: float
+    rate: float = 0
+    # Фиксированная цена: если True — rate/minutes игнорируются, используется amount напрямую.
+    is_fixed: bool = False
+    amount: Optional[float] = None
 
 class InvoiceCreate(BaseModel):
     number: str

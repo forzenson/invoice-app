@@ -116,9 +116,9 @@
       <tr>
         <td class="num">{{ loop.index }}</td>
         <td>{{ item.description }}</td>
-        <td>{{ item.unit }}</td>
-        <td class="right">{{ item.rate | int }}</td>
-        <td class="right">{{ item.time_formatted }}</td>
+        <td>{{ 'Fixed' if item.is_fixed else item.unit }}</td>
+        <td class="right">{{ '—' if item.is_fixed else (item.rate | int) }}</td>
+        <td class="right">{{ '—' if item.is_fixed else item.time_formatted }}</td>
         <td class="right">{{ "%.2f"|format(item.amount) }}</td>
       </tr>
       {% endfor %}

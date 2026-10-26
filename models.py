@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, Enum, Text
+from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, Enum, Text, Boolean
 from sqlalchemy.orm import relationship
 import enum
 from database import Base
@@ -103,6 +103,7 @@ class InvoiceItem(Base):
     rate = Column(Float, nullable=False)
     minutes = Column(Integer, nullable=False)
     amount = Column(Float, nullable=False)
+    is_fixed = Column(Boolean, default=False, nullable=False)
 
     invoice = relationship("Invoice", back_populates="items")
 

@@ -52,7 +52,8 @@ def _build_pdf_context(inv: "Invoice") -> tuple[dict, str]:
         "cp_company_number": cp.company_number or "",
         "cp_eu_vat": cp.eu_vat or "",
         "items": [{"description": i.description, "unit": i.unit, "rate": i.rate,
-                   "time_formatted": i.time_formatted, "amount": i.amount} for i in inv.items],
+                   "time_formatted": i.time_formatted, "amount": i.amount,
+                   "is_fixed": bool(getattr(i, "is_fixed", False))} for i in inv.items],
     }
     return context, template_file
 
